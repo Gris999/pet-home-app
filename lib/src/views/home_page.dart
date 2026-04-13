@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/auth_user.dart';
 import '../services/auth_service.dart';
+import '../services/client_service.dart';
 import 'login_page.dart';
 import 'dashboard_page.dart';
 import 'mascotas_page.dart';
@@ -24,6 +25,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late Future<AuthUser> _profileFuture = _loadProfile();
+  late final ClientService _clientService =
+      ClientService(authService: widget.authService);
   int _currentIndex = 0;
   bool _isLoggingOut = false;
 
@@ -60,11 +63,12 @@ class _HomePageState extends State<HomePage> {
         final user = snapshot.data!;
 
         final pages = [
-          DashboardPage(user: user),
-          const MascotasPage(),
-          const CitasPage(),
+          DashboardPage(user: user, clientService: _clientService),
+          MascotasPage(clientService: _clientService),
+          CitasPage(clientService: _clientService),
           PerfilPage(
             user: user,
+            clientService: _clientService,
             onLogout: _logout,
             isLoggingOut: _isLoggingOut,
           ),

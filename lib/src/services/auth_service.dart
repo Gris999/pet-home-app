@@ -133,6 +133,19 @@ class AuthService {
     return newAccessToken;
   }
 
+  Future<Map<String, String>> authorizedHeaders() async {
+    final accessToken = await _storage.read(key: _accessKey);
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw const AuthException('No hay una sesion activa.');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken',
+    };
+  }
+
   Future<void> logout() async {
     final accessToken = await _storage.read(key: _accessKey);
     final refreshToken = await _storage.read(key: _refreshKey);
@@ -194,4 +207,3 @@ class AuthException implements Exception {
   @override
   String toString() => message;
 }
-
