@@ -1,4 +1,5 @@
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 
@@ -35,28 +36,21 @@ class AppointmentsService {
   }
 
   Future<void> updateAppointment(int id, AppointmentRequest request) async {
+    final path = '/api/gestion/servicios/citas/$id/estado/';
+    if (kDebugMode) {
+      debugPrint('[AppointmentsService] PATCH $path');
+    }
     await _apiClient.send(
       method: 'PATCH',
-      path: '/api/gestion/servicios/citas/$id/',
-      body: request.toJson(),
+      path: path,
+      body: request.toPatchJson(),
     );
   }
 
   Future<void> cancelAppointment(int id) async {
-    try {
-      await _apiClient.send(
-        method: 'DELETE',
-        path: '/api/gestion/servicios/citas/$id/',
-      );
-      return;
-    } on ClientException catch (error) {
-      if (error.statusCode != 404 && error.statusCode != 405) rethrow;
-    }
-
     await _apiClient.send(
-      method: 'PATCH',
+      method: 'DELETE',
       path: '/api/gestion/servicios/citas/$id/',
-      body: const {'estado': 'CANCELADA'},
     );
   }
 
@@ -65,26 +59,17 @@ class AppointmentsService {
     required String date,
     required String modality,
   }) async {
-    final paths = <String>[
-      '/api/gestion/servicios/citas/disponibilidad/?servicio=$serviceId&fecha=$date&modalidad=$modality',
-      '/api/gestion/servicios/agenda/disponibilidad/?servicio=$serviceId&fecha=$date&modalidad=$modality',
-      '/api/gestion/servicios/disponibilidad/?servicio=$serviceId&fecha=$date&modalidad=$modality',
-    ];
+    final safeDate = _normalizeDate(date);
+    final path =
+        '/api/gestion/servicios/agenda/disponibilidad/?servicio=$serviceId&fecha=$safeDate&modalidad=$modality';
 
-    for (var i = 0; i < paths.length; i++) {
-      try {
-        final response = await _apiClient.send(method: 'GET', path: paths[i]);
-        final decoded = _apiClient.decode(response);
-        return AvailabilitySlot.fromAny(decoded);
-      } on ClientException catch (error) {
-        final isLast = i == paths.length - 1;
-        if (isLast || (error.statusCode != 404 && error.statusCode != 405)) {
-          rethrow;
-        }
-      }
+    if (kDebugMode) {
+      debugPrint('[AppointmentsService] GET $path');
     }
 
-    return <AvailabilitySlot>[];
+    final response = await _apiClient.send(method: 'GET', path: path);
+    final decoded = _apiClient.decode(response);
+    return AvailabilitySlot.fromAny(decoded);
   }
 }
 
@@ -199,6 +184,7 @@ class AppointmentRequest {
     required this.priceId,
     required this.date,
     required this.time,
+    this.endTime,
     required this.modality,
     this.address,
     this.description,
@@ -209,6 +195,7 @@ class AppointmentRequest {
   final int priceId;
   final String date;
   final String time;
+  final String? endTime;
   final String modality;
   final String? address;
   final String? description;
@@ -217,11 +204,18 @@ class AppointmentRequest {
         'mascota': petId,
         'servicio': serviceId,
         'precio_servicio': priceId,
-        'fecha_programada': date,
-        'hora_inicio': time,
+        'fecha_programada': _normalizeDate(date),
+        'hora_inicio': _normalizeTime(time),
         'modalidad': modality,
         'direccion_cita': modality == 'DOMICILIO' ? address : null,
         'descripcion': description,
+      };
+
+  Map<String, dynamic> toPatchJson() => {
+        'fecha_programada': _normalizeDate(date),
+        'hora_inicio': _normalizeTime(time),
+        if (endTime != null && endTime!.trim().isNotEmpty)
+          'hora_fin': _normalizeTime(endTime!),
       };
 }
 
@@ -278,4 +272,18 @@ int _asInt(dynamic value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value) ?? 0;
   return 0;
+}
+
+String _normalizeDate(String value) {
+  final raw = value.trim();
+  if (raw.length >= 10) return raw.substring(0, 10);
+  return raw;
+}
+
+String _normalizeTime(String value) {
+  final raw = value.trim();
+  if (raw.isEmpty) return raw;
+  if (raw.length == 5) return '$raw:00';
+  if (raw.length >= 8) return raw.substring(0, 8);
+  return raw;
 }
