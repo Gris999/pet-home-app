@@ -173,7 +173,12 @@ class _MascotasPageState extends State<MascotasPage> {
                 ),
                 const SizedBox(height: 12),
                 if (_pets.isEmpty)
-                  const _EmptyState(text: 'Aun no tienes mascotas registradas.')
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Text('Aun no tienes mascotas registradas.'),
+                    ),
+                  )
                 else
                   ..._pets.map((pet) => _PetCard(
                         pet: pet,
@@ -245,7 +250,8 @@ class _MascotasPageState extends State<MascotasPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: _selectedSpeciesId,
+                key: ValueKey(_selectedSpeciesId),
+                initialValue: _selectedSpeciesId,
                 decoration: const InputDecoration(labelText: 'Especie'),
                 items: _species
                     .map(
@@ -263,7 +269,8 @@ class _MascotasPageState extends State<MascotasPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: _selectedBreedId,
+                key: ValueKey(_selectedBreedId),
+                initialValue: _selectedBreedId,
                 decoration: const InputDecoration(labelText: 'Raza opcional'),
                 items: _breeds
                     .map(
@@ -277,7 +284,8 @@ class _MascotasPageState extends State<MascotasPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedSex,
+                key: ValueKey(_selectedSex),
+                initialValue: _selectedSex,
                 decoration: const InputDecoration(labelText: 'Sexo opcional'),
                 items: const [
                   DropdownMenuItem(value: 'MACHO', child: Text('Macho')),
@@ -396,20 +404,6 @@ class _PetCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(child: Text(text)),
     );
   }
 }

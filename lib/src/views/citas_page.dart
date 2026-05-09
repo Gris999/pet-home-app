@@ -250,7 +250,7 @@ class _CitasPageState extends State<CitasPage> {
     final confirmadas = _appointments.where((c) => c.status == 'CONFIRMADA').length;
 
     return Card(
-      color: const Color(0xFF6A11CB).withOpacity(0.1),
+      color: const Color(0xFF6A11CB).withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -311,7 +311,7 @@ class _CitasPageState extends State<CitasPage> {
                 ? () => _cancelAppointment(appointment.id)
                 : null,
           ),
-        ).toList(),
+        ),
         const SizedBox(height: 16),
       ],
     );
@@ -337,7 +337,8 @@ class _CitasPageState extends State<CitasPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                value: _selectedPetId,
+                key: ValueKey(_selectedPetId),
+                initialValue: _selectedPetId,
                 decoration: const InputDecoration(labelText: 'Mascota'),
                 items: _pets
                     .map(
@@ -351,7 +352,8 @@ class _CitasPageState extends State<CitasPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: _selectedServiceId,
+                key: ValueKey(_selectedServiceId),
+                initialValue: _selectedServiceId,
                 decoration: const InputDecoration(labelText: 'Servicio'),
                 items: _services
                     .map(
@@ -370,7 +372,8 @@ class _CitasPageState extends State<CitasPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedModality,
+                key: ValueKey(_selectedModality),
+                initialValue: _selectedModality,
                 decoration: const InputDecoration(labelText: 'Modalidad'),
                 items: const [
                   DropdownMenuItem(value: 'CLINICA', child: Text('Clinica')),
@@ -386,7 +389,8 @@ class _CitasPageState extends State<CitasPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: _selectedPriceId,
+                key: ValueKey(_selectedPriceId),
+                initialValue: _selectedPriceId,
                 decoration: const InputDecoration(labelText: 'Precio'),
                 items: _availablePrices
                     .map(
@@ -666,20 +670,6 @@ class _AppointmentCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
       ],
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(child: Text(text)),
     );
   }
 }

@@ -24,7 +24,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late Future<AuthUser> _profileFuture = _loadProfile();
+  late final Future<AuthUser> _profileFuture = _loadProfile();
   late final ClientService _clientService =
       ClientService(authService: widget.authService);
   int _currentIndex = 0;
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF6A11CB).withOpacity(0.1)
+              ? const Color(0xFF6A11CB).withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
