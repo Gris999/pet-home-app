@@ -1,8 +1,5 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:pethome_app/src/features/appointments/data/appointments_service.dart';
 import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
 import 'package:pethome_app/src/features/pets/data/pets_service.dart';
@@ -69,7 +66,6 @@ class _CitasPageState extends State<CitasPage> {
   String _selectedModality = 'CLINICA';
   bool _isSaving = false;
   bool _isLoadingAvailability = false;
-  bool _isGettingLocation = false;
   String? _message;
 
   bool _showWizard = false;
@@ -116,9 +112,6 @@ class _CitasPageState extends State<CitasPage> {
       widget.permissions.canExecute('SERV_CITAS') ||
       widget.permissions.canDelete('CITAS') ||
       widget.permissions.canExecute('CITAS');
-
-  _Coordinates? get _addressCoordinates =>
-      _parseCoordinates(_addressController.text.trim());
 
   List<DateTime> get _nextTenDays {
     final today = DateUtils.dateOnly(DateTime.now());
@@ -478,7 +471,6 @@ class _CitasPageState extends State<CitasPage> {
     _availability = <AvailabilitySlot>[];
     _dateController.text = _formatApiDate(_nextTenDays.first);
     _message = null;
-    _isGettingLocation = false;
   }
 
   String _formatApiDate(DateTime date) {
@@ -520,98 +512,6 @@ class _CitasPageState extends State<CitasPage> {
       _timeController.text = time;
       _message = null;
     });
-  }
-
-  _Coordinates? _parseCoordinates(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
-    final match = RegExp(
-      r'(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)',
-    ).firstMatch(value);
-    if (match == null) return null;
-
-    final lat = double.tryParse(match.group(1) ?? '');
-    final lng = double.tryParse(match.group(2) ?? '');
-    if (lat == null || lng == null) return null;
-    if (lat.abs() > 90 || lng.abs() > 180) return null;
-    return _Coordinates(lat: lat, lng: lng);
-  }
-
-  String _formatCoordinates(_Coordinates coords) {
-    return '${coords.lat.toStringAsFixed(6)}, ${coords.lng.toStringAsFixed(6)}';
-  }
-
-  void _updateAddressFromCoordinates(_Coordinates coords) {
-    _addressController.text = _formatCoordinates(coords);
-    setState(() {
-      _message = null;
-    });
-  }
-
-  Future<void> _useCurrentLocation() async {
-    setState(() {
-      _isGettingLocation = true;
-      _message = null;
-    });
-
-    try {
-      final enabled = await Geolocator.isLocationServiceEnabled();
-      if (!enabled) {
-        throw const ClientException(
-          'Activa la ubicacion del dispositivo para usar esta opcion.',
-        );
-      }
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      if (permission == LocationPermission.denied) {
-        throw const ClientException(
-          'No se otorgaron permisos de ubicacion.',
-        );
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw const ClientException(
-          'Los permisos de ubicacion fueron bloqueados. Habilitalos desde la configuracion del dispositivo.',
-        );
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-
-      final coords = _Coordinates(
-        lat: position.latitude,
-        lng: position.longitude,
-      );
-
-      _updateAddressFromCoordinates(coords);
-
-      if (!mounted) return;
-      setState(() {
-        _message = 'Ubicacion cargada correctamente.';
-      });
-    } on ClientException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _message = error.toString();
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _message = 'No se pudo obtener la ubicacion actual.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGettingLocation = false;
-        });
-      }
-    }
   }
 
   bool _isEditableStatus(String status) {
@@ -1093,116 +993,14 @@ class _CitasPageState extends State<CitasPage> {
             ],
             if (_wizardStep == 3) ...[
               if (_selectedModality == 'DOMICILIO') ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _isGettingLocation ? null : _useCurrentLocation,
-                        icon: const Icon(Icons.my_location),
-                        label: Text(
-                          _isGettingLocation
-                              ? 'Obteniendo ubicacion...'
-                              : 'Usar mi ubicacion',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
                 TextFormField(
                   controller: _addressController,
                   decoration: const InputDecoration(
                     labelText: 'Direccion de atencion',
-                    helperText: 'Se guardara en formato latitud, longitud.',
+                    hintText: 'Ej. Av. Viedma #123',
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
-                const SizedBox(height: 10),
-                if (_addressCoordinates != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade200),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            height: 220,
-                            child: FlutterMap(
-                              options: MapOptions(
-                                initialCenter: LatLng(
-                                  _addressCoordinates!.lat,
-                                  _addressCoordinates!.lng,
-                                ),
-                                initialZoom: 15,
-                                onTap: (_, point) {
-                                  _updateAddressFromCoordinates(
-                                    _Coordinates(
-                                      lat: point.latitude,
-                                      lng: point.longitude,
-                                    ),
-                                  );
-                                },
-                              ),
-                              children: [
-                                TileLayer(
-                                  urlTemplate:
-                                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                  userAgentPackageName: 'com.pethome.app',
-                                ),
-                                MarkerLayer(
-                                  markers: [
-                                    Marker(
-                                      point: LatLng(
-                                        _addressCoordinates!.lat,
-                                        _addressCoordinates!.lng,
-                                      ),
-                                      width: 52,
-                                      height: 52,
-                                      child: const Icon(
-                                        Icons.location_on,
-                                        color: _orange,
-                                        size: 42,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Coordenadas: ${_formatCoordinates(_addressCoordinates!)}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Puedes hacer zoom, mover el mapa y tocar para mover la marca.',
-                                  style: TextStyle(color: Colors.black54),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (_addressCoordinates == null &&
-                    _addressController.text.trim().isNotEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text(
-                      'Ingresa coordenadas validas con formato: latitud, longitud',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  ),
                 const SizedBox(height: 10),
               ],
               TextFormField(
@@ -1519,14 +1317,4 @@ class _ErrorState extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Coordinates {
-  const _Coordinates({
-    required this.lat,
-    required this.lng,
-  });
-
-  final double lat;
-  final double lng;
 }
