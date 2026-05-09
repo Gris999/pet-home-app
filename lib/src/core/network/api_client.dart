@@ -50,7 +50,7 @@ class ApiClient {
         );
       }
       throw ClientException(
-        _extractErrorMessage(_decode(response)),
+        _extractErrorMessage(_tryDecode(response)),
         statusCode: response.statusCode,
       );
     }
@@ -83,7 +83,33 @@ class ApiClient {
 
   Object _decode(http.Response response) {
     if (response.body.isEmpty) return <String, dynamic>{};
-    return jsonDecode(response.body);
+
+    final body = response.body.trimLeft();
+    final contentType = response.headers['content-type'] ?? '';
+    if (body.startsWith('<') || contentType.contains('text/html')) {
+      throw ClientException(
+        'El servidor devolvio una pagina HTML en lugar de JSON. '
+        'Verifica que el backend este levantado y que las migraciones esten aplicadas.',
+        statusCode: response.statusCode,
+      );
+    }
+
+    try {
+      return jsonDecode(response.body);
+    } on FormatException {
+      throw ClientException(
+        'La respuesta del servidor no tiene formato JSON valido.',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  Object _tryDecode(http.Response response) {
+    try {
+      return _decode(response);
+    } on ClientException catch (error) {
+      return {'detail': error.message};
+    }
   }
 
   String _extractErrorMessage(Object data) {

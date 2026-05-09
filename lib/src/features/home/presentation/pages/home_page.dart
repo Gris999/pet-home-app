@@ -4,6 +4,7 @@ import 'package:pethome_app/src/features/appointments/presentation/pages/citas_p
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
 import 'package:pethome_app/src/features/auth/presentation/pages/login_page.dart';
+import 'package:pethome_app/src/features/chatbot/presentation/widgets/chat_fab.dart';
 import 'package:pethome_app/src/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:pethome_app/src/features/pets/data/pets_service.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/mascotas_page.dart';
@@ -189,6 +190,7 @@ class _HomePageState extends State<HomePage> {
 
         return Scaffold(
           body: visibleEntries[_currentIndex].page,
+          floatingActionButton: const ChatFab(),
           bottomNavigationBar: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Container(
