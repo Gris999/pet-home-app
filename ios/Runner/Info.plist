@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Usamos tu ubicacion para guardar las coordenadas de la cita a domicilio.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Usamos el microfono para convertir tu voz en mensajes para el chatbot.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Usamos reconocimiento de voz para enviar mensajes hablados al chatbot.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

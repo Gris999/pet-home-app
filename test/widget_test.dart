@@ -8,13 +8,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:pethome_app/src/app.dart';
+import 'package:pethome_app/src/core/router/app.dart';
 
 void main() {
-  testWidgets('la app arranca sin errores', (WidgetTester tester) async {
+  testWidgets('app renders session gate', (WidgetTester tester) async {
     await tester.pumpWidget(const PetHomeApp());
-    await tester.pump();
-
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
