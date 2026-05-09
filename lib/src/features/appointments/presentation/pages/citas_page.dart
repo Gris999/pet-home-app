@@ -271,17 +271,23 @@ class _CitasPageState extends State<CitasPage> {
   }
 
   Future<void> _loadData() async {
-    final results = await Future.wait([
-      widget.petsService.getPets(),
-      widget.appointmentsService.getServices(),
-      widget.appointmentsService.getPrices(),
-      widget.appointmentsService.getAppointments(),
-    ]);
+    final canCreateOrManage = _canCreateAppointment || _canManageReservations;
+    final canViewOrManageReservations = _canViewReservations || _canManageReservations;
 
-    _pets = results[0] as List<Pet>;
-    _services = (results[1] as List<ServiceItem>).where((service) => service.active).toList();
-    _prices = (results[2] as List<ServicePrice>).where((price) => price.active).toList();
-    _appointments = results[3] as List<Appointment>;
+    _pets = canCreateOrManage ? await widget.petsService.getPets() : <Pet>[];
+    _services = canCreateOrManage
+      ? (await widget.appointmentsService.getServices())
+        .where((service) => service.active)
+        .toList()
+      : <ServiceItem>[];
+    _prices = canCreateOrManage
+      ? (await widget.appointmentsService.getPrices())
+        .where((price) => price.active)
+        .toList()
+      : <ServicePrice>[];
+    _appointments = canViewOrManageReservations
+      ? await widget.appointmentsService.getAppointments()
+      : <Appointment>[];
   }
 
   Future<void> _loadAvailability() async {
@@ -866,7 +872,7 @@ class _CitasPageState extends State<CitasPage> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _nextTenDays.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     final day = _nextTenDays[index];
                     final dayValue = _formatApiDate(day);
