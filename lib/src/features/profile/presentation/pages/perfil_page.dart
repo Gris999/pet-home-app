@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
+import 'package:pethome_app/src/features/auth/presentation/pages/change_password_page.dart';
 import 'package:pethome_app/src/features/profile/data/profile_service.dart';
 
 class PerfilPage extends StatefulWidget {
@@ -230,6 +231,20 @@ class _PerfilPageState extends State<PerfilPage> {
                   const SizedBox(height: 12),
                   Text(_message!, style: const TextStyle(color: Colors.black54)),
                 ],
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChangePasswordPage(
+                          authService: widget.authService,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.lock_outline),
+                  label: const Text('Cambiar contrasena'),
+                ),
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: widget.isLoggingOut ? null : widget.onLogout,

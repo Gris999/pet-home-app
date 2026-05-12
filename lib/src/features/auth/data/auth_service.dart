@@ -117,7 +117,10 @@ class AuthService {
     final data = _decodeBody(response);
 
     if (response.statusCode != 200) {
-      throw AuthException(_extractErrorMessage(data));
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
     }
 
     await _persistSession(data, selectedSlug: slugVeterinaria);
@@ -141,7 +144,10 @@ class AuthService {
 
     final data = _decodeBody(response);
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw AuthException(_extractErrorMessage(data));
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
     }
 
     await _persistSession(data, selectedSlug: slugVeterinaria);
@@ -189,7 +195,10 @@ class AuthService {
     final data = _decodeBody(response);
 
     if (response.statusCode != 200) {
-      throw AuthException(_extractErrorMessage(data));
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
     }
 
     final slug = await _storage.read(key: _selectedVetSlugKey);
@@ -270,6 +279,76 @@ class AuthService {
     await _storage.delete(key: _sessionContextKey);
     await _storage.delete(key: _sessionComponentsKey);
     await _storage.delete(key: _selectedVetSlugKey);
+  }
+
+  Future<String> forgotPassword({required String correo}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/auth/forgot-password/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'correo': correo}),
+    );
+
+    final data = _decodeBody(response);
+    if (response.statusCode != 200) {
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return (data['detail'] ?? 'Si el correo existe, se enviara un enlace de recuperacion.')
+        .toString();
+  }
+
+  Future<String> resetPassword({
+    required String token,
+    required String nuevaPassword,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/auth/reset-password/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'token': token,
+        'nueva_password': nuevaPassword,
+      }),
+    );
+
+    final data = _decodeBody(response);
+    if (response.statusCode != 200) {
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return (data['detail'] ?? 'La contrasena fue restablecida correctamente.')
+        .toString();
+  }
+
+  Future<String> changePassword({
+    required String passwordActual,
+    required String nuevaPassword,
+  }) async {
+    final headers = await authorizedHeaders();
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/auth/change-password/'),
+      headers: headers,
+      body: jsonEncode({
+        'password_actual': passwordActual,
+        'nueva_password': nuevaPassword,
+      }),
+    );
+
+    final data = _decodeBody(response);
+    if (response.statusCode != 200) {
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return (data['detail'] ?? 'La contrasena fue actualizada correctamente.')
+        .toString();
   }
 
   Future<void> _persistSession(
@@ -385,9 +464,12 @@ class AuthService {
 }
 
 class AuthException implements Exception {
-  const AuthException(this.message);
+  const AuthException(this.message, {this.statusCode});
 
   final String message;
+  final int? statusCode;
+
+  bool get isForbidden => statusCode == 403;
 
   @override
   String toString() => message;
