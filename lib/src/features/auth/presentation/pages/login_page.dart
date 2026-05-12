@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
+import 'package:pethome_app/src/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:pethome_app/src/features/home/presentation/pages/home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -137,7 +138,9 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on AuthException catch (error) {
       setState(() {
-        _errorMessage = error.message;
+        _errorMessage = error.isForbidden
+            ? error.message
+            : error.message;
       });
     } catch (_) {
       setState(() {
@@ -173,6 +176,7 @@ class _LoginPageState extends State<LoginPage> {
                   const _Header(),
                   const SizedBox(height: 30),
                   _LoginCard(
+                    authService: widget.authService,
                     formKey: _formKey,
                     correoController: _correoController,
                     passwordController: _passwordController,
@@ -248,6 +252,7 @@ class _Header extends StatelessWidget {
 
 class _LoginCard extends StatelessWidget {
   const _LoginCard({
+    required this.authService,
     required this.formKey,
     required this.correoController,
     required this.passwordController,
@@ -265,6 +270,7 @@ class _LoginCard extends StatelessWidget {
     required this.validatePassword,
   });
 
+  final AuthService authService;
   final GlobalKey<FormState> formKey;
   final TextEditingController correoController;
   final TextEditingController passwordController;
@@ -400,6 +406,23 @@ class _LoginCard extends StatelessWidget {
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Entrar'),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ForgotPasswordPage(
+                                authService: authService,
+                              ),
+                            ),
+                          );
+                        },
+                  child: const Text('Olvide mi contrasena'),
+                ),
               ),
               const SizedBox(height: 16),
               Row(
