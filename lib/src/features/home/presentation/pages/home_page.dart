@@ -10,6 +10,9 @@ import 'package:pethome_app/src/features/pets/data/pets_service.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/mascotas_page.dart';
 import 'package:pethome_app/src/features/profile/data/profile_service.dart';
 import 'package:pethome_app/src/features/profile/presentation/pages/perfil_page.dart';
+import 'package:pethome_app/src/core/services/notification_service.dart';
+import 'package:pethome_app/src/core/network/api_client.dart';
+import 'package:pethome_app/src/core/widgets/notification_bell.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -34,9 +37,16 @@ class _HomePageState extends State<HomePage> {
       ProfileService(authService: widget.authService);
   int _currentIndex = 0;
   bool _isLoggingOut = false;
+  late final NotificationService _notificationService;
 
   Future<AuthSession> _loadSession() async {
     final session = await widget.authService.getSession();
+
+    _notificationService = NotificationService(
+      apiClient: ApiClient(authService: widget.authService),
+    );
+    _notificationService.initialize();
+
     if (widget.initialUser == null) return session;
 
     return AuthSession(
@@ -49,6 +59,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _logout() async {
     setState(() => _isLoggingOut = true);
+
+    // Desactivar notificaciones antes de salir
+    try {
+      await _notificationService.uninitialize();
+    } catch (_) {}
 
     await widget.authService.logout();
 
@@ -189,6 +204,21 @@ class _HomePageState extends State<HomePage> {
         }
 
         return Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            title: const Text(
+              'PetHome',
+              style: TextStyle(
+                color: Color(0xFF6A11CB),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            actions: const [
+              NotificationBell(),
+              SizedBox(width: 8),
+            ],
+          ),
           body: visibleEntries[_currentIndex].page,
           floatingActionButton: const ChatFab(),
           bottomNavigationBar: Padding(
