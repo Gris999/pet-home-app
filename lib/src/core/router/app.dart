@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/auth/presentation/pages/login_page.dart';
 import 'package:pethome_app/src/features/home/presentation/pages/home_page.dart';
+import 'package:pethome_app/src/features/tracking/presentation/pages/tracking_page.dart';
 
 class PetHomeApp extends StatelessWidget {
   const PetHomeApp({super.key});
@@ -92,6 +93,21 @@ class PetHomeApp extends StatelessWidget {
         ),
       ),
 
+      onGenerateRoute: (settings) {
+        if (settings.name == TrackingPage.routeName) {
+          final args = settings.arguments;
+          if (args is TrackingRouteArgs) {
+            return MaterialPageRoute(
+              builder: (_) => TrackingPage(
+                authService: args.authService,
+                roleNombre: args.roleNombre,
+              ),
+            );
+          }
+        }
+        return null;
+      },
+
       home: const SessionGate(),
     );
   }
@@ -127,4 +143,14 @@ class _SessionGateState extends State<SessionGate> {
       },
     );
   }
+}
+
+class TrackingRouteArgs {
+  const TrackingRouteArgs({
+    required this.authService,
+    required this.roleNombre,
+  });
+
+  final AuthService authService;
+  final String roleNombre;
 }
