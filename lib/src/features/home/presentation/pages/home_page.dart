@@ -17,13 +17,11 @@ import 'package:pethome_app/src/core/widgets/notification_bell.dart';
 // Nuevos Imports
 import 'package:pethome_app/src/features/admin_reports/presentation/pages/admin_dashboard_page.dart';
 import 'package:pethome_app/src/features/admin_reports/presentation/pages/reports_page.dart';
+import 'package:pethome_app/src/features/tracking/data/tracking_service.dart';
+import 'package:pethome_app/src/features/tracking/presentation/pages/tracking_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({
-    super.key,
-    required this.authService,
-    this.initialUser,
-  });
+  const HomePage({super.key, required this.authService, this.initialUser});
 
   final AuthService authService;
   final AuthUser? initialUser;
@@ -34,11 +32,18 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final Future<AuthSession> _sessionFuture = _loadSession();
-  late final PetsService _petsService = PetsService(authService: widget.authService);
-  late final AppointmentsService _appointmentsService =
-      AppointmentsService(authService: widget.authService);
-  late final ProfileService _profileService =
-      ProfileService(authService: widget.authService);
+  late final PetsService _petsService = PetsService(
+    authService: widget.authService,
+  );
+  late final AppointmentsService _appointmentsService = AppointmentsService(
+    authService: widget.authService,
+  );
+  late final ProfileService _profileService = ProfileService(
+    authService: widget.authService,
+  );
+  late final TrackingService _trackingService = TrackingService(
+    authService: widget.authService,
+  );
   int _currentIndex = 0;
   bool _isLoggingOut = false;
   late final NotificationService _notificationService;
@@ -124,14 +129,17 @@ class _HomePageState extends State<HomePage> {
         final session = snapshot.data!;
         final user = session.user;
         final permissions = session.permissions;
+        final isSuperAdmin =
+            user.roleNombre.trim().toUpperCase() == 'SUPERADMIN';
 
         // Detección del rol — separación total Admin vs Cliente
         final roleName = (user.roleNombre).toUpperCase();
-        final isAdmin = roleName.contains('ADMIN') ||
-                        roleName.contains('VETERINARIO') ||
-                        roleName.contains('DUEÑO') ||
-                        roleName.contains('OWNER') ||
-                        permissions.canView('REPORTES');
+        final isAdmin =
+            roleName.contains('ADMIN') ||
+            roleName.contains('VETERINARIO') ||
+            roleName.contains('DUEÑO') ||
+            roleName.contains('OWNER') ||
+            permissions.canView('REPORTES');
 
         late final List<_NavEntry> visibleEntries;
 
@@ -144,7 +152,9 @@ class _HomePageState extends State<HomePage> {
                 user: user,
                 authService: widget.authService,
                 onNavigateToReports: () {
-                  final idx = visibleEntries.indexWhere((e) => e.code == 'REPORTES');
+                  final idx = visibleEntries.indexWhere(
+                    (e) => e.code == 'REPORTES',
+                  );
                   if (idx != -1) setState(() => _currentIndex = idx);
                 },
               ),
@@ -191,6 +201,18 @@ class _HomePageState extends State<HomePage> {
               icon: Icons.calendar_today,
               label: 'Citas',
             ),
+            // ── Seguimiento: visible para clientes, oculto para SuperAdmin ──
+            if (!isSuperAdmin)
+              _NavEntry(
+                code: 'SEGUIMIENTO',
+                page: TrackingPage(
+                  authService: widget.authService,
+                  roleNombre: user.roleNombre,
+                  trackingService: _trackingService,
+                ),
+                icon: Icons.alt_route,
+                label: 'Seguimiento',
+              ),
             _NavEntry(
               code: 'PERFIL',
               page: PerfilPage(
@@ -246,52 +268,64 @@ class _HomePageState extends State<HomePage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            actions: const [
-              NotificationBell(),
-              SizedBox(width: 8),
-            ],
+            actions: const [NotificationBell(), SizedBox(width: 8)],
           ),
-          drawer: isAdmin ? Drawer(
-            child: Column(
-              children: [
-                UserAccountsDrawerHeader(
-                  decoration: const BoxDecoration(color: Color(0xFF6A11CB)),
-                  accountName: Text(user.nombre ?? 'Administrador'),
-                  accountEmail: Text(user.correo),
-                  currentAccountPicture: const CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.admin_panel_settings, color: Color(0xFF6A11CB), size: 40),
+          drawer: isAdmin
+              ? Drawer(
+                  child: Column(
+                    children: [
+                      UserAccountsDrawerHeader(
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF6A11CB),
+                        ),
+                        accountName: Text(user.nombre ?? 'Administrador'),
+                        accountEmail: Text(user.correo),
+                        currentAccountPicture: const CircleAvatar(
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            Icons.admin_panel_settings,
+                            color: Color(0xFF6A11CB),
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.dashboard_outlined),
+                        title: const Text('Dashboard Principal'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          final idx = visibleEntries.indexWhere(
+                            (e) => e.code == 'ADMIN_DASHBOARD',
+                          );
+                          if (idx != -1) setState(() => _currentIndex = idx);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.bar_chart_rounded),
+                        title: const Text('Reportes IA'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          final idx = visibleEntries.indexWhere(
+                            (e) => e.code == 'REPORTES',
+                          );
+                          if (idx != -1) setState(() => _currentIndex = idx);
+                        },
+                      ),
+                      const Spacer(),
+                      const Divider(),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.logout,
+                          color: Colors.redAccent,
+                        ),
+                        title: const Text('Cerrar Sesión'),
+                        onTap: _logout,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.dashboard_outlined),
-                  title: const Text('Dashboard Principal'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    final idx = visibleEntries.indexWhere((e) => e.code == 'ADMIN_DASHBOARD');
-                    if (idx != -1) setState(() => _currentIndex = idx);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.bar_chart_rounded),
-                  title: const Text('Reportes IA'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    final idx = visibleEntries.indexWhere((e) => e.code == 'REPORTES');
-                    if (idx != -1) setState(() => _currentIndex = idx);
-                  },
-                ),
-                const Spacer(),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.redAccent),
-                  title: const Text('Cerrar Sesión'),
-                  onTap: _logout,
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ) : null,
+                )
+              : null,
           body: visibleEntries[_currentIndex].page,
           floatingActionButton: const ChatFab(),
           bottomNavigationBar: Padding(

@@ -127,16 +127,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         : null,
                     onTap: () {
                       if (isUnread) _markAsRead(item['id_notificacion']);
-                      
+
                       final String? link = item['link'];
                       if (link != null && link.isNotEmpty) {
                         // Aquí puedes implementar la navegación según tu Router
                         // Por ejemplo, si usas Navigator simple:
                         if (link.contains('/citas/')) {
-                           final parts = link.split('/');
-                           final id = parts.last;
-                           print('Navegando a cita ID: $id');
-                           // Navigator.push(context, MaterialPageRoute(...));
+                          final parts = link.split('/');
+                          final id = parts.last;
+                          print('Navegando a cita ID: $id');
+                          // Navigator.push(context, MaterialPageRoute(...));
                         }
                       }
                     },

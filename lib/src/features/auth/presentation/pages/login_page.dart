@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
+import 'package:pethome_app/src/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:pethome_app/src/features/auth/presentation/pages/register_page.dart';
 import 'package:pethome_app/src/features/home/presentation/pages/home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -137,7 +139,9 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on AuthException catch (error) {
       setState(() {
-        _errorMessage = error.message;
+        _errorMessage = error.isForbidden
+            ? error.message
+            : error.message;
       });
     } catch (_) {
       setState(() {
@@ -173,6 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                   const _Header(),
                   const SizedBox(height: 30),
                   _LoginCard(
+                    authService: widget.authService,
                     formKey: _formKey,
                     correoController: _correoController,
                     passwordController: _passwordController,
@@ -192,6 +197,40 @@ class _LoginPageState extends State<LoginPage> {
                       });
                     },
                     onSubmit: _submit,
+                    onCreateAccount: () {
+                      final selectedSlug = _selectedSlugVeterinaria;
+                      if (selectedSlug == null || selectedSlug.isEmpty) {
+                        setState(() {
+                          _errorMessage = 'Primero selecciona una veterinaria.';
+                        });
+                        return;
+                      }
+
+                      PublicVeterinaria? selectedVet;
+                      for (final vet in _veterinarias) {
+                        if (vet.slug == selectedSlug) {
+                          selectedVet = vet;
+                          break;
+                        }
+                      }
+
+                      if (selectedVet == null) {
+                        setState(() {
+                          _errorMessage = 'Primero selecciona una veterinaria.';
+                        });
+                        return;
+                      }
+
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => RegisterPage(
+                            authService: widget.authService,
+                            slugVeterinaria: selectedVet!.slug,
+                            nombreVeterinaria: selectedVet.nombre,
+                          ),
+                        ),
+                      );
+                    },
                     validateEmail: _validateEmail,
                     validatePassword: _validatePassword,
                   ),
@@ -248,6 +287,7 @@ class _Header extends StatelessWidget {
 
 class _LoginCard extends StatelessWidget {
   const _LoginCard({
+    required this.authService,
     required this.formKey,
     required this.correoController,
     required this.passwordController,
@@ -261,10 +301,12 @@ class _LoginCard extends StatelessWidget {
     required this.onChangedVeterinaria,
     required this.onTogglePassword,
     required this.onSubmit,
+    required this.onCreateAccount,
     required this.validateEmail,
     required this.validatePassword,
   });
 
+  final AuthService authService;
   final GlobalKey<FormState> formKey;
   final TextEditingController correoController;
   final TextEditingController passwordController;
@@ -278,6 +320,7 @@ class _LoginCard extends StatelessWidget {
   final ValueChanged<String?> onChangedVeterinaria;
   final VoidCallback onTogglePassword;
   final VoidCallback onSubmit;
+  final VoidCallback onCreateAccount;
   final String? Function(String?) validateEmail;
   final String? Function(String?) validatePassword;
 
@@ -401,6 +444,23 @@ class _LoginCard extends StatelessWidget {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Entrar'),
               ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ForgotPasswordPage(
+                                authService: authService,
+                              ),
+                            ),
+                          );
+                        },
+                  child: const Text('Olvide mi contrasena'),
+                ),
+              ),
               const SizedBox(height: 16),
               Row(
                 children: const [
@@ -414,7 +474,7 @@ class _LoginCard extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               OutlinedButton(
-                onPressed: () {},
+                onPressed: isLoading ? null : onCreateAccount,
                 child: const Text('Crear cuenta nueva'),
               ),
               if (errorMessage != null) ...[

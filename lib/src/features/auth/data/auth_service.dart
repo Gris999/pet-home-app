@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,11 +10,9 @@ import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
-  AuthService({
-    FlutterSecureStorage? storage,
-    http.Client? client,
-  })  : _storage = storage ?? const FlutterSecureStorage(),
-        _client = client ?? http.Client();
+  AuthService({FlutterSecureStorage? storage, http.Client? client})
+    : _storage = storage ?? const FlutterSecureStorage(),
+      _client = client ?? http.Client();
 
   static const String _accessKey = 'access_token';
   static const String _refreshKey = 'refresh_token';
@@ -35,7 +34,9 @@ class AuthService {
       return 'http://127.0.0.1:8000';
     }
 
-    return Platform.isAndroid ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+    return Platform.isAndroid
+        ? 'http://10.0.2.2:8000'
+        : 'http://127.0.0.1:8000';
   }
 
   Future<bool> hasSession() async {
@@ -117,35 +118,93 @@ class AuthService {
     final data = _decodeBody(response);
 
     if (response.statusCode != 200) {
-      throw AuthException(_extractErrorMessage(data));
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
     }
 
     await _persistSession(data, selectedSlug: slugVeterinaria);
     return getMe();
   }
 
+  Future<AuthSession> registerMobile({
+    required String slugVeterinaria,
+    required String nombre,
+    required String correo,
+    required String password,
+    String? telefono,
+    String? direccion,
+  }) async {
+    final registerUrl = '$baseUrl/api/auth/mobile/register/';
+    debugPrint('[registerMobile] url=$registerUrl');
+
+    http.Response response;
+    try {
+      response = await _client
+          .post(
+            Uri.parse(registerUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'slug_veterinaria': slugVeterinaria,
+              'nombre': nombre.trim(),
+              'correo': correo.trim(),
+              'password': password,
+              'telefono': (telefono ?? '').trim(),
+              'direccion': (direccion ?? '').trim(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
+    } on SocketException {
+      throw const AuthException(
+        'No se pudo conectar. Revisa tu conexion e intentalo otra vez.',
+      );
+    } on TimeoutException {
+      throw const AuthException(
+        'No se pudo conectar. Revisa tu conexion e intentalo otra vez.',
+      );
+    }
+
+    debugPrint('[registerMobile] statusCode=${response.statusCode}');
+    final data = _decodeBody(response);
+    final isSuccess201 = response.statusCode == 201;
+    final isSuccess200 = response.statusCode == 200;
+    if (!isSuccess201 && !isSuccess200) {
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
+    }
+
+    final tokens = _extractTokens(data);
+    final hasAccess = (tokens['access'] ?? '').isNotEmpty;
+    final hasRefresh = (tokens['refresh'] ?? '').isNotEmpty;
+    debugPrint(
+      '[registerMobile] tokens extracted access=$hasAccess refresh=$hasRefresh',
+    );
+    if (!hasAccess || !hasRefresh) {
+      throw const AuthException(
+        'La cuenta se creo, pero faltan credenciales de sesion en la respuesta.',
+      );
+    }
+    debugPrint('[registerMobile] tokens extraidos OK');
+
+    await _persistSession(data, selectedSlug: slugVeterinaria);
+    debugPrint('[registerMobile] sesion guardada OK');
+    return AuthSession.fromJson(data);
+  }
+
   Future<AuthSession> register({
     required String correo,
     required String password,
     required String slugVeterinaria,
-  }) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl/api/auth/mobile/register/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'correo': correo,
-        'password': password,
-        'slug_veterinaria': slugVeterinaria,
-      }),
+  }) {
+    return registerMobile(
+      slugVeterinaria: slugVeterinaria,
+      nombre: correo,
+      correo: correo,
+      password: password,
     );
-
-    final data = _decodeBody(response);
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw AuthException(_extractErrorMessage(data));
-    }
-
-    await _persistSession(data, selectedSlug: slugVeterinaria);
-    return AuthSession.fromJson(data);
   }
 
   Future<AuthUser> getProfile() async {
@@ -189,7 +248,10 @@ class AuthService {
     final data = _decodeBody(response);
 
     if (response.statusCode != 200) {
-      throw AuthException(_extractErrorMessage(data));
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
     }
 
     final slug = await _storage.read(key: _selectedVetSlugKey);
@@ -272,6 +334,74 @@ class AuthService {
     await _storage.delete(key: _selectedVetSlugKey);
   }
 
+  Future<String> forgotPassword({required String correo}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/auth/forgot-password/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'correo': correo}),
+    );
+
+    final data = _decodeBody(response);
+    if (response.statusCode != 200) {
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return (data['detail'] ??
+            'Si el correo existe, se enviara un enlace de recuperacion.')
+        .toString();
+  }
+
+  Future<String> resetPassword({
+    required String token,
+    required String nuevaPassword,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/auth/reset-password/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'token': token, 'nueva_password': nuevaPassword}),
+    );
+
+    final data = _decodeBody(response);
+    if (response.statusCode != 200) {
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return (data['detail'] ?? 'La contrasena fue restablecida correctamente.')
+        .toString();
+  }
+
+  Future<String> changePassword({
+    required String passwordActual,
+    required String nuevaPassword,
+  }) async {
+    final headers = await authorizedHeaders();
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/auth/change-password/'),
+      headers: headers,
+      body: jsonEncode({
+        'password_actual': passwordActual,
+        'nueva_password': nuevaPassword,
+      }),
+    );
+
+    final data = _decodeBody(response);
+    if (response.statusCode != 200) {
+      throw AuthException(
+        _extractErrorMessage(data),
+        statusCode: response.statusCode,
+      );
+    }
+
+    return (data['detail'] ?? 'La contrasena fue actualizada correctamente.')
+        .toString();
+  }
+
   Future<void> _persistSession(
     Map<String, dynamic> data, {
     String? selectedSlug,
@@ -298,7 +428,10 @@ class AuthService {
 
     final contextMap =
         (data['context'] as Map<String, dynamic>?) ?? <String, dynamic>{};
-    await _storage.write(key: _sessionContextKey, value: jsonEncode(contextMap));
+    await _storage.write(
+      key: _sessionContextKey,
+      value: jsonEncode(contextMap),
+    );
 
     final componentes = contextMap['componentes'] is List
         ? contextMap['componentes'] as List
@@ -315,13 +448,10 @@ class AuthService {
 
   Map<String, String?> _extractTokens(Map<String, dynamic> data) {
     final tokensMap = data['tokens'] as Map<String, dynamic>?;
-    final access = (tokensMap?['access'] ?? data['access'])?.toString();
-    final refresh = (tokensMap?['refresh'] ?? data['refresh'])?.toString();
+    final access = (data['access'] ?? tokensMap?['access'])?.toString();
+    final refresh = (data['refresh'] ?? tokensMap?['refresh'])?.toString();
 
-    return {
-      'access': access,
-      'refresh': refresh,
-    };
+    return {'access': access, 'refresh': refresh};
   }
 
   Future<AuthSession?> _readSessionFromStorage() async {
@@ -345,9 +475,9 @@ class AuthService {
         ...contextMap,
         'componentes': componentes,
       }),
-      componentesRaw: componentes
-          .whereType<Map<String, dynamic>>()
-          .toList(growable: false),
+      componentesRaw: componentes.whereType<Map<String, dynamic>>().toList(
+        growable: false,
+      ),
       permissions: PermissionsHelper.fromComponentes(
         componentes.whereType<Map<String, dynamic>>().toList(growable: false),
       ),
@@ -377,7 +507,31 @@ class AuthService {
     }
 
     if (data.isNotEmpty) {
-      return data.values.first.toString();
+      final friendly = <String>[];
+      data.forEach((key, value) {
+        if (value == null) return;
+        if (value is String && value.isNotEmpty) {
+          friendly.add(value);
+          return;
+        }
+        if (value is List && value.isNotEmpty) {
+          friendly.add(value.first.toString());
+          return;
+        }
+        if (value is Map<String, dynamic> && value.isNotEmpty) {
+          final nested = value.values.first;
+          if (nested is List && nested.isNotEmpty) {
+            friendly.add(nested.first.toString());
+          } else {
+            friendly.add(nested.toString());
+          }
+          return;
+        }
+        friendly.add(value.toString());
+      });
+      if (friendly.isNotEmpty) {
+        return friendly.join('\n');
+      }
     }
 
     return 'Ocurrio un error al conectar con el servidor.';
@@ -385,9 +539,12 @@ class AuthService {
 }
 
 class AuthException implements Exception {
-  const AuthException(this.message);
+  const AuthException(this.message, {this.statusCode});
 
   final String message;
+  final int? statusCode;
+
+  bool get isForbidden => statusCode == 403;
 
   @override
   String toString() => message;
