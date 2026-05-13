@@ -60,7 +60,7 @@ class _TrackingPageView extends StatelessWidget {
   final AuthService authService;
 
   static const _purple = Color(0xFF6A11CB);
-  static const _softPurple = Color(0xFFF2EAF7);
+  //static const _softPurple = Color(0xFFF2EAF7);
   static const _orange = Color(0xFFFF9800);
 
   @override
