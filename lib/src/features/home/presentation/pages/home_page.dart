@@ -14,6 +14,10 @@ import 'package:pethome_app/src/core/services/notification_service.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/core/widgets/notification_bell.dart';
 
+// Nuevos Imports
+import 'package:pethome_app/src/features/admin_reports/presentation/pages/admin_dashboard_page.dart';
+import 'package:pethome_app/src/features/admin_reports/presentation/pages/reports_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
@@ -60,7 +64,6 @@ class _HomePageState extends State<HomePage> {
   Future<void> _logout() async {
     setState(() => _isLoggingOut = true);
 
-    // Desactivar notificaciones antes de salir
     try {
       await _notificationService.uninitialize();
     } catch (_) {}
@@ -122,58 +125,87 @@ class _HomePageState extends State<HomePage> {
         final user = session.user;
         final permissions = session.permissions;
 
-        final navEntries = <_NavEntry>[
-          _NavEntry(
-            code: 'DASHBOARD',
-            page: DashboardPage(
-              user: user,
-              petsService: _petsService,
-              appointmentsService: _appointmentsService,
-            ),
-            icon: Icons.home,
-            label: 'Inicio',
-          ),
-          _NavEntry(
-            code: 'MASCOTAS',
-            page: MascotasPage(
-              clientService: _petsService,
-              appointmentsService: _appointmentsService,
-              permissions: permissions,
-            ),
-            icon: Icons.pets,
-            label: 'Mascotas',
-          ),
-          _NavEntry(
-            code: 'CITAS',
-            page: CitasPage(
-              petsService: _petsService,
-              appointmentsService: _appointmentsService,
-              permissions: permissions,
-            ),
-            icon: Icons.calendar_today,
-            label: 'Citas',
-          ),
-          _NavEntry(
-            code: 'PERFIL',
-            page: PerfilPage(
-              user: user,
-              authService: widget.authService,
-              clientService: _profileService,
-              onLogout: _logout,
-              isLoggingOut: _isLoggingOut,
-              permissions: permissions,
-            ),
-            icon: Icons.person,
-            label: 'Perfil',
-          ),
-        ];
+        // Detección del rol — separación total Admin vs Cliente
+        final roleName = (user.roleNombre).toUpperCase();
+        final isAdmin = roleName.contains('ADMIN') ||
+                        roleName.contains('VETERINARIO') ||
+                        roleName.contains('DUEÑO') ||
+                        roleName.contains('OWNER') ||
+                        permissions.canView('REPORTES');
 
-        final visibleEntries = navEntries
-            .where((entry) =>
-                permissions.canView(entry.code) ||
-                entry.code == 'PERFIL' ||
-                entry.code == 'DASHBOARD')
-            .toList(growable: false);
+        late final List<_NavEntry> visibleEntries;
+
+        if (isAdmin) {
+          // ────── VISTA ADMIN: solo módulos administrativos ──────
+          visibleEntries = [
+            _NavEntry(
+              code: 'ADMIN_DASHBOARD',
+              page: AdminDashboardPage(
+                user: user,
+                authService: widget.authService,
+                onNavigateToReports: () {
+                  final idx = visibleEntries.indexWhere((e) => e.code == 'REPORTES');
+                  if (idx != -1) setState(() => _currentIndex = idx);
+                },
+              ),
+              icon: Icons.dashboard_outlined,
+              label: 'Dashboard',
+            ),
+            _NavEntry(
+              code: 'REPORTES',
+              page: ReportsPage(authService: widget.authService),
+              icon: Icons.bar_chart_rounded,
+              label: 'Reportes',
+            ),
+          ];
+        } else {
+          // ────── VISTA CLIENTE: solo módulos de cliente ──────
+          visibleEntries = [
+            _NavEntry(
+              code: 'DASHBOARD',
+              page: DashboardPage(
+                user: user,
+                petsService: _petsService,
+                appointmentsService: _appointmentsService,
+              ),
+              icon: Icons.home,
+              label: 'Inicio',
+            ),
+            _NavEntry(
+              code: 'MASCOTAS',
+              page: MascotasPage(
+                clientService: _petsService,
+                appointmentsService: _appointmentsService,
+                permissions: permissions,
+              ),
+              icon: Icons.pets,
+              label: 'Mascotas',
+            ),
+            _NavEntry(
+              code: 'CITAS',
+              page: CitasPage(
+                petsService: _petsService,
+                appointmentsService: _appointmentsService,
+                permissions: permissions,
+              ),
+              icon: Icons.calendar_today,
+              label: 'Citas',
+            ),
+            _NavEntry(
+              code: 'PERFIL',
+              page: PerfilPage(
+                user: user,
+                authService: widget.authService,
+                clientService: _profileService,
+                onLogout: _logout,
+                isLoggingOut: _isLoggingOut,
+                permissions: permissions,
+              ),
+              icon: Icons.person,
+              label: 'Perfil',
+            ),
+          ];
+        }
 
         if (visibleEntries.isEmpty) {
           return Scaffold(
@@ -219,6 +251,47 @@ class _HomePageState extends State<HomePage> {
               SizedBox(width: 8),
             ],
           ),
+          drawer: isAdmin ? Drawer(
+            child: Column(
+              children: [
+                UserAccountsDrawerHeader(
+                  decoration: const BoxDecoration(color: Color(0xFF6A11CB)),
+                  accountName: Text(user.nombre ?? 'Administrador'),
+                  accountEmail: Text(user.correo),
+                  currentAccountPicture: const CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.admin_panel_settings, color: Color(0xFF6A11CB), size: 40),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.dashboard_outlined),
+                  title: const Text('Dashboard Principal'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    final idx = visibleEntries.indexWhere((e) => e.code == 'ADMIN_DASHBOARD');
+                    if (idx != -1) setState(() => _currentIndex = idx);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.bar_chart_rounded),
+                  title: const Text('Reportes IA'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    final idx = visibleEntries.indexWhere((e) => e.code == 'REPORTES');
+                    if (idx != -1) setState(() => _currentIndex = idx);
+                  },
+                ),
+                const Spacer(),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.redAccent),
+                  title: const Text('Cerrar Sesión'),
+                  onTap: _logout,
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ) : null,
           body: visibleEntries[_currentIndex].page,
           floatingActionButton: const ChatFab(),
           bottomNavigationBar: Padding(
