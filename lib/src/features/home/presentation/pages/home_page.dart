@@ -10,6 +10,8 @@ import 'package:pethome_app/src/features/pets/data/pets_service.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/mascotas_page.dart';
 import 'package:pethome_app/src/features/profile/data/profile_service.dart';
 import 'package:pethome_app/src/features/profile/presentation/pages/perfil_page.dart';
+import 'package:pethome_app/src/features/tracking/data/tracking_service.dart';
+import 'package:pethome_app/src/features/tracking/presentation/pages/tracking_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -32,6 +34,8 @@ class _HomePageState extends State<HomePage> {
       AppointmentsService(authService: widget.authService);
   late final ProfileService _profileService =
       ProfileService(authService: widget.authService);
+  late final TrackingService _trackingService =
+      TrackingService(authService: widget.authService);
   int _currentIndex = 0;
   bool _isLoggingOut = false;
 
@@ -106,6 +110,7 @@ class _HomePageState extends State<HomePage> {
         final session = snapshot.data!;
         final user = session.user;
         final permissions = session.permissions;
+        final isSuperAdmin = user.roleNombre.trim().toUpperCase() == 'SUPERADMIN';
 
         final navEntries = <_NavEntry>[
           _NavEntry(
@@ -138,6 +143,17 @@ class _HomePageState extends State<HomePage> {
             icon: Icons.calendar_today,
             label: 'Citas',
           ),
+          if (!isSuperAdmin)
+            _NavEntry(
+              code: 'SEGUIMIENTO',
+              page: TrackingPage(
+                authService: widget.authService,
+                roleNombre: user.roleNombre,
+                trackingService: _trackingService,
+              ),
+              icon: Icons.alt_route,
+              label: 'Seguimiento',
+            ),
           _NavEntry(
             code: 'PERFIL',
             page: PerfilPage(
@@ -156,6 +172,7 @@ class _HomePageState extends State<HomePage> {
         final visibleEntries = navEntries
             .where((entry) =>
                 permissions.canView(entry.code) ||
+                entry.code == 'SEGUIMIENTO' ||
                 entry.code == 'PERFIL' ||
                 entry.code == 'DASHBOARD')
             .toList(growable: false);
