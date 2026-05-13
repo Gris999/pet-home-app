@@ -4,12 +4,14 @@ class AuthUser {
     required this.correo,
     required this.roleNombre,
     required this.isActive,
+    this.nombre,
   });
 
   final int idUsuario;
   final String correo;
   final String roleNombre;
   final bool isActive;
+  final String? nombre;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     final roleRaw = json['role'] ?? json['rol'];
@@ -24,6 +26,7 @@ class AuthUser {
       correo: correo,
       roleNombre: roleNombre,
       isActive: json['is_active'] as bool? ?? false,
+      nombre: json['nombre']?.toString() ?? json['full_name']?.toString(),
     );
   }
 }

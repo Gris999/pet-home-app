@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/core/widgets/location_coordinate_picker.dart';
 import 'package:pethome_app/src/features/appointments/data/appointments_service.dart';
@@ -693,7 +693,11 @@ class _CitasPageState extends State<CitasPage> {
           if (snapshot.hasError) {
             return _ErrorState(
               message: snapshot.error.toString(),
-              onRetry: () => setState(() => _loadFuture = _loadData()),
+              onRetry: () {
+                setState(() {
+                  _loadFuture = _loadData();
+                });
+              },
             );
           }
 

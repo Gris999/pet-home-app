@@ -46,9 +46,9 @@ class TrackingPage extends StatelessWidget {
     }
 
     return ChangeNotifierProvider(
-      create: (_) =>
-          TrackingController(service: trackingService ?? TrackingService(authService: authService))
-            ..loadInitial(),
+      create: (_) => TrackingController(
+        service: trackingService ?? TrackingService(authService: authService),
+      )..loadInitial(),
       child: _TrackingPageView(authService: authService),
     );
   }
@@ -67,7 +67,8 @@ class _TrackingPageView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<TrackingController>(
       builder: (context, controller, _) {
-        final isSeguimientos = controller.section == TrackingSection.seguimientos;
+        final isSeguimientos =
+            controller.section == TrackingSection.seguimientos;
         final errorMessage = controller.currentError;
         final errorCode = controller.currentErrorCode;
 
@@ -110,11 +111,16 @@ class _TrackingPageView extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       FilledButton.icon(
-                        onPressed: controller.isLoadingCurrent ? null : controller.refreshCurrent,
+                        onPressed: controller.isLoadingCurrent
+                            ? null
+                            : controller.refreshCurrent,
                         style: FilledButton.styleFrom(
                           backgroundColor: _orange,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 11,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -149,8 +155,10 @@ class _TrackingPageView extends StatelessWidget {
                     seguimientoFechaHasta: controller.seguimientoFechaHasta,
                     pedidoFechaDesde: controller.pedidoFechaDesde,
                     pedidoFechaHasta: controller.pedidoFechaHasta,
-                    onSeguimientoFechaDesdeChanged: controller.setSeguimientoDesde,
-                    onSeguimientoFechaHastaChanged: controller.setSeguimientoHasta,
+                    onSeguimientoFechaDesdeChanged:
+                        controller.setSeguimientoDesde,
+                    onSeguimientoFechaHastaChanged:
+                        controller.setSeguimientoHasta,
                     onPedidoFechaDesdeChanged: controller.setPedidoDesde,
                     onPedidoFechaHastaChanged: controller.setPedidoHasta,
                     onApply: isSeguimientos
@@ -162,8 +170,13 @@ class _TrackingPageView extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    isSeguimientos ? 'Seguimientos recientes' : 'Pedidos recientes',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    isSeguimientos
+                        ? 'Seguimientos recientes'
+                        : 'Pedidos recientes',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
@@ -443,7 +456,10 @@ class _FilterCard extends StatelessWidget {
               prefixIcon: const Icon(Icons.search),
               hintText: 'Buscar',
               fillColor: const Color(0xFFF1F1F1),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -458,12 +474,7 @@ class _FilterCard extends StatelessWidget {
                   label: isSeguimientos ? 'Tipo' : 'Estado',
                   value: isSeguimientos ? seguimientoTipo : pedidoEstado,
                   options: isSeguimientos
-                      ? const <String>[
-                          'CITA',
-                          'SERVICIO',
-                          'PEDIDO',
-                          'RUTA',
-                        ]
+                      ? const <String>['CITA', 'SERVICIO', 'PEDIDO', 'RUTA']
                       : const <String>[
                           'PENDIENTE',
                           'CONFIRMADO',
@@ -579,18 +590,15 @@ class _FilterDropdown extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         fillColor: const Color(0xFFF1F1F1),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 12,
+        ),
       ),
       items: <DropdownMenuItem<String>>[
-        const DropdownMenuItem<String>(
-          value: null,
-          child: Text('Todos'),
-        ),
+        const DropdownMenuItem<String>(value: null, child: Text('Todos')),
         ...options.map(
-          (item) => DropdownMenuItem<String>(
-            value: item,
-            child: Text(item),
-          ),
+          (item) => DropdownMenuItem<String>(value: item, child: Text(item)),
         ),
       ],
       onChanged: onChanged,
@@ -599,10 +607,7 @@ class _FilterDropdown extends StatelessWidget {
 }
 
 class _SeguimientoCard extends StatelessWidget {
-  const _SeguimientoCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _SeguimientoCard({required this.item, required this.onTap});
 
   final SeguimientoItem item;
   final VoidCallback onTap;
@@ -636,7 +641,10 @@ class _SeguimientoCard extends StatelessWidget {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: _orange,
-                child: Icon(_iconForType(item.tipoSeguimiento), color: Colors.white),
+                child: Icon(
+                  _iconForType(item.tipoSeguimiento),
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -645,13 +653,13 @@ class _SeguimientoCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(fontSize: 13),
-                    ),
+                    Text(subtitle, style: const TextStyle(fontSize: 13)),
                     const SizedBox(height: 2),
                     Text(
                       _secondaryRow(item, amountLabel),
@@ -688,7 +696,8 @@ class _SeguimientoCard extends StatelessWidget {
     if (item.tipoSeguimiento == 'PEDIDO' && item.pedido != null) {
       return 'Pedido #${item.pedido!.idPedido}';
     }
-    if (item.cita?.servicio?.nombre != null && item.cita!.servicio!.nombre.isNotEmpty) {
+    if (item.cita?.servicio?.nombre != null &&
+        item.cita!.servicio!.nombre.isNotEmpty) {
       return item.cita!.servicio!.nombre;
     }
     return _toLabel(item.tipoSeguimiento);
@@ -713,10 +722,7 @@ class _SeguimientoCard extends StatelessWidget {
 }
 
 class _PedidoCard extends StatelessWidget {
-  const _PedidoCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _PedidoCard({required this.item, required this.onTap});
 
   final PedidoListItem item;
   final VoidCallback onTap;
@@ -754,7 +760,10 @@ class _PedidoCard extends StatelessWidget {
                   children: [
                     Text(
                       'Pedido #${item.idPedido}',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(item.estadoPedido),
@@ -859,8 +868,8 @@ class _ErrorState extends StatelessWidget {
               is401
                   ? Icons.lock_clock_outlined
                   : is403
-                      ? Icons.gpp_bad_outlined
-                      : Icons.wifi_tethering_error_rounded,
+                  ? Icons.gpp_bad_outlined
+                  : Icons.wifi_tethering_error_rounded,
               size: 36,
               color: Colors.black54,
             ),

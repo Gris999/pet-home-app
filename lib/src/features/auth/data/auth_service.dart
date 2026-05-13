@@ -10,11 +10,9 @@ import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
-  AuthService({
-    FlutterSecureStorage? storage,
-    http.Client? client,
-  })  : _storage = storage ?? const FlutterSecureStorage(),
-        _client = client ?? http.Client();
+  AuthService({FlutterSecureStorage? storage, http.Client? client})
+    : _storage = storage ?? const FlutterSecureStorage(),
+      _client = client ?? http.Client();
 
   static const String _accessKey = 'access_token';
   static const String _refreshKey = 'refresh_token';
@@ -36,7 +34,9 @@ class AuthService {
       return 'http://127.0.0.1:8000';
     }
 
-    return Platform.isAndroid ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+    return Platform.isAndroid
+        ? 'http://10.0.2.2:8000'
+        : 'http://127.0.0.1:8000';
   }
 
   Future<bool> hasSession() async {
@@ -349,7 +349,8 @@ class AuthService {
       );
     }
 
-    return (data['detail'] ?? 'Si el correo existe, se enviara un enlace de recuperacion.')
+    return (data['detail'] ??
+            'Si el correo existe, se enviara un enlace de recuperacion.')
         .toString();
   }
 
@@ -360,10 +361,7 @@ class AuthService {
     final response = await _client.post(
       Uri.parse('$baseUrl/api/auth/reset-password/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'token': token,
-        'nueva_password': nuevaPassword,
-      }),
+      body: jsonEncode({'token': token, 'nueva_password': nuevaPassword}),
     );
 
     final data = _decodeBody(response);
@@ -430,7 +428,10 @@ class AuthService {
 
     final contextMap =
         (data['context'] as Map<String, dynamic>?) ?? <String, dynamic>{};
-    await _storage.write(key: _sessionContextKey, value: jsonEncode(contextMap));
+    await _storage.write(
+      key: _sessionContextKey,
+      value: jsonEncode(contextMap),
+    );
 
     final componentes = contextMap['componentes'] is List
         ? contextMap['componentes'] as List
@@ -450,10 +451,7 @@ class AuthService {
     final access = (data['access'] ?? tokensMap?['access'])?.toString();
     final refresh = (data['refresh'] ?? tokensMap?['refresh'])?.toString();
 
-    return {
-      'access': access,
-      'refresh': refresh,
-    };
+    return {'access': access, 'refresh': refresh};
   }
 
   Future<AuthSession?> _readSessionFromStorage() async {
@@ -477,9 +475,9 @@ class AuthService {
         ...contextMap,
         'componentes': componentes,
       }),
-      componentesRaw: componentes
-          .whereType<Map<String, dynamic>>()
-          .toList(growable: false),
+      componentesRaw: componentes.whereType<Map<String, dynamic>>().toList(
+        growable: false,
+      ),
       permissions: PermissionsHelper.fromComponentes(
         componentes.whereType<Map<String, dynamic>>().toList(growable: false),
       ),
