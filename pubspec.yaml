@@ -26,6 +26,13 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   provider: ^6.1.2
+  firebase_core: ^4.8.0
+  firebase_messaging: ^16.2.1
+  flutter_local_notifications: ^21.0.0
+  intl: ^0.20.2
+  dio: ^5.8.0
+  path_provider: ^2.1.5
+  open_file: ^3.3.4
 
 dev_dependencies:
   flutter_test:

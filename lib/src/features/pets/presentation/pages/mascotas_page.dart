@@ -981,37 +981,98 @@ class _PetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 1,
+      child: InkWell(
         onTap: onTap,
-        leading: const CircleAvatar(
-          backgroundColor: Colors.orange,
-          child: Icon(Icons.pets, color: Colors.white),
-        ),
-        title: Text(pet.name),
-        subtitle: Text(
-          '${pet.speciesName} - ${pet.breedName ?? 'No registrada'}',
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(pet.sex ?? ''),
-            if (onViewClinicalHistory != null)
-              IconButton(
-                icon: const Icon(Icons.medical_services_outlined, color: Colors.green),
-                onPressed: onViewClinicalHistory,
-                tooltip: 'Historial clínico',
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Avatar
+              const CircleAvatar(
+                backgroundColor: Colors.orange,
+                radius: 26,
+                child: Icon(Icons.pets, color: Colors.white, size: 24),
               ),
-            if (onEdit != null)
-              IconButton(
-                icon: const Icon(Icons.edit, color: Color(0xFF6A11CB)),
-                onPressed: onEdit,
+              const SizedBox(width: 14),
+              // Info principal — Expanded para que no se corte
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pet.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${pet.speciesName} · ${pet.breedName ?? 'Raza no registrada'}',
+                      style: const TextStyle(color: Colors.black54, fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (pet.sex != null && pet.sex!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6A11CB).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          pet.sex!,
+                          style: const TextStyle(
+                            color: Color(0xFF6A11CB),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            if (onDelete != null)
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                onPressed: onDelete,
+              // Botones de acción — compactos en columna vertical
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onViewClinicalHistory != null)
+                    IconButton(
+                      icon: const Icon(Icons.medical_services_outlined,
+                          color: Colors.green, size: 20),
+                      onPressed: onViewClinicalHistory,
+                      tooltip: 'Historial clínico',
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(6),
+                    ),
+                  if (onEdit != null)
+                    IconButton(
+                      icon: const Icon(Icons.edit,
+                          color: Color(0xFF6A11CB), size: 20),
+                      onPressed: onEdit,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(6),
+                    ),
+                  if (onDelete != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: Colors.red, size: 20),
+                      onPressed: onDelete,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(6),
+                    ),
+                ],
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
