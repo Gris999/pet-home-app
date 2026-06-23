@@ -20,6 +20,7 @@ class AuthService {
   static const String _sessionContextKey = 'session_context_json';
   static const String _sessionComponentsKey = 'session_components_json';
   static const String _selectedVetSlugKey = 'selected_veterinaria_slug';
+  static const String _defaultBaseUrl = 'https://pethome-backend-ujju.onrender.com';
 
   final FlutterSecureStorage _storage;
   final http.Client _client;
@@ -48,13 +49,7 @@ class AuthService {
       return configuredBaseUrl;
     }
 
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
-    }
-
-    return Platform.isAndroid
-        ? 'http://10.0.2.2:8000'
-        : 'http://127.0.0.1:8000';
+    return _defaultBaseUrl;
   }
 
   Future<bool> hasSession() async {

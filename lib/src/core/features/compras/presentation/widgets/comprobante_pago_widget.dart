@@ -128,7 +128,7 @@ class ComprobantePagoWidget extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(color: Color(0xFFE4E4E7), height: 1),
+              separatorBuilder: (_, _) => const Divider(color: Color(0xFFE4E4E7), height: 1),
               itemBuilder: (context, index) {
                 final item = items[index] as Map<String, dynamic>;
                 final desc = item['descripcion'] ?? '-';

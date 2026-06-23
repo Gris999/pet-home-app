@@ -11,14 +11,32 @@ void main() async {
   await dotenv.load(fileName: "assets/env");
 
   if (!kIsWeb) {
-    final stripePublishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'];
-    if (stripePublishableKey != null && stripePublishableKey.trim().isNotEmpty) {
-      Stripe.publishableKey = stripePublishableKey.trim();
-      await Stripe.instance.applySettings();
-    }
-
-    await Firebase.initializeApp();
+    await _initializeNativeServices();
   }
 
   runApp(const PetHomeApp());
+}
+
+Future<void> _initializeNativeServices() async {
+  try {
+    final stripePublishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'];
+    if (stripePublishableKey != null && stripePublishableKey.trim().isNotEmpty) {
+      Stripe.publishableKey = stripePublishableKey.trim();
+      await Stripe.instance
+          .applySettings()
+          .timeout(const Duration(seconds: 8));
+    }
+  } catch (error) {
+    if (kDebugMode) {
+      debugPrint('stripe_init_error=$error');
+    }
+  }
+
+  try {
+    await Firebase.initializeApp().timeout(const Duration(seconds: 8));
+  } catch (error) {
+    if (kDebugMode) {
+      debugPrint('firebase_init_error=$error');
+    }
+  }
 }

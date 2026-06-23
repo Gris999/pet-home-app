@@ -34,7 +34,7 @@ class _AdopcionFormPageState extends State<AdopcionFormPage> {
   final _imagePicker = ImagePicker();
   XFile? _selectedPhoto;
 
-  late Future<void> _future = _loadCatalogs();
+  late final Future<void> _future = _loadCatalogs();
   List<PetSpecies> _species = [];
   List<PetBreed> _breeds = [];
   int? _speciesId;

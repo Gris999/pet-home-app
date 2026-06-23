@@ -163,7 +163,7 @@ class PagoProvider extends ChangeNotifier {
       final pago = await _pagoService.getPagoDetail(idPago);
       pagoData = pago;
       final estado = pago['estado_pago'] as String?;
-      print('[PagoProvider] Estado actual del pago=$estado');
+      debugPrint('[PagoProvider] Estado actual del pago=$estado');
 
       if (estado == 'PAGADO') {
         _pollingTimer?.cancel();
@@ -209,7 +209,7 @@ class PagoProvider extends ChangeNotifier {
     required VoidCallback onFailed,
     VoidCallback? onStockRevision,
   }) {
-    print('[PagoProvider] Iniciando polling para id_pago=$idPago');
+    debugPrint('[PagoProvider] Iniciando polling para id_pago=$idPago');
     _pollingTimer?.cancel();
     isPolling = true;
     errorMessage = null;
@@ -234,7 +234,7 @@ class PagoProvider extends ChangeNotifier {
         final pago = await _pagoService.getPagoDetail(idPago);
         pagoData = pago;
         final estado = pago['estado_pago'] as String?;
-        print('[PagoProvider] Estado actual del pago=$estado');
+        debugPrint('[PagoProvider] Estado actual del pago=$estado');
 
         if (estado == 'PAGADO') {
           timer.cancel();

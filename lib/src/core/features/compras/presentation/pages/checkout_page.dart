@@ -276,6 +276,7 @@ class _CheckoutViewState extends State<_CheckoutView> with WidgetsBindingObserve
     }
 
     if (!await _persistAppointmentAddress()) return;
+    if (!mounted) return;
 
     final cartProvider = _isPedidoMode
         ? Provider.of<CarritoProvider>(context, listen: false)
@@ -290,6 +291,7 @@ class _CheckoutViewState extends State<_CheckoutView> with WidgetsBindingObserve
       referenciaId: refId,
     );
 
+    if (!mounted) return;
     if (!success || provider.checkoutUrl == null) return;
 
     if (provider.autoConfirmed) {
@@ -308,6 +310,7 @@ class _CheckoutViewState extends State<_CheckoutView> with WidgetsBindingObserve
     }
 
     await openExternalLink(provider.checkoutUrl!);
+    if (!mounted) return;
     provider.startPollingPayment(
       idPago: provider.currentPagoId!,
       onSuccess: () {

@@ -4,6 +4,7 @@ import 'package:pethome_app/src/features/pets/data/pets_service.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/clinical_history_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_addresses_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_history_page.dart';
+import 'package:pethome_app/src/features/pets/presentation/pages/pet_image_analysis_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_preventive_plan_page.dart';
 
 class PetProfilePage extends StatefulWidget {
@@ -12,11 +13,13 @@ class PetProfilePage extends StatefulWidget {
     required this.pet,
     required this.petsService,
     required this.onUseAddressInAppointment,
+    this.onScheduleAppointment,
   });
 
   final Pet pet;
   final PetsService petsService;
   final ValueChanged<String> onUseAddressInAppointment;
+  final VoidCallback? onScheduleAppointment;
 
   @override
   State<PetProfilePage> createState() => _PetProfilePageState();
@@ -143,6 +146,23 @@ class _PetProfilePageState extends State<PetProfilePage> {
                         petId: pet.id,
                         petName: pet.name,
                         petsService: widget.petsService,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _AccessCard(
+                title: 'Analizar imagen con IA',
+                countLabel: 'Orientacion preventiva',
+                color: const Color(0xFFF59E0B),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PetImageAnalysisPage(
+                        pet: pet,
+                        petsService: widget.petsService,
+                        onScheduleAppointment: widget.onScheduleAppointment,
                       ),
                     ),
                   );

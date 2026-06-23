@@ -495,6 +495,17 @@ class _MascotasPageState extends State<MascotasPage> {
         builder: (_) => PetProfilePage(
           pet: pet,
           petsService: widget.clientService,
+          onScheduleAppointment: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CitasPage(
+                  petsService: widget.clientService,
+                  appointmentsService: widget.appointmentsService,
+                  permissions: widget.permissions,
+                ),
+              ),
+            );
+          },
           onUseAddressInAppointment: (address) {
             Navigator.of(context).push(
               MaterialPageRoute(

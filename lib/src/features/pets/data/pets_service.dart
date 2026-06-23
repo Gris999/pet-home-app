@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/pets/models/clinical_history.dart';
+import 'package:pethome_app/src/features/pets/models/pet_image_analysis.dart';
 
 class PetsService {
   PetsService({
@@ -178,6 +179,78 @@ class PetsService {
         .whereType<Map<String, dynamic>>()
         .map(PreventivePlanItem.fromJson)
         .toList();
+  }
+
+  Future<List<PetImageAnalysis>> getPetImageAnalyses(int petId) async {
+    final response = await _catalogGet(
+      '/api/gestion/clientes/mascotas/$petId/analisis-imagen/',
+    );
+    final decoded = _extractJsonMapOrThrow(response);
+    final rawItems = decoded['results'];
+    final list = rawItems is List
+        ? rawItems
+            .whereType<Map<String, dynamic>>()
+            .map(PetImageAnalysis.fromJson)
+            .toList()
+        : <PetImageAnalysis>[];
+    return list;
+  }
+
+  Future<PetImageAnalysis> getPetImageAnalysis(int analysisId) async {
+    final response = await _catalogGet(
+      '/api/gestion/clientes/analisis-imagen/$analysisId/',
+    );
+    final decoded = _extractJsonMapOrThrow(response);
+    return PetImageAnalysis.fromJson(decoded);
+  }
+
+  Future<PetImageAnalysis> analyzePetImage({
+    required int petId,
+    required String filePath,
+  }) async {
+    var headers = await _authService.authorizedHeaders();
+    headers.remove('Content-Type');
+    final uri = Uri.parse(
+      '${_authService.baseUrl}/api/gestion/clientes/mascotas/$petId/analisis-imagen/',
+    );
+
+    Future<http.StreamedResponse> runMultipart(
+      Map<String, String> authHeaders,
+    ) async {
+      final multipart = http.MultipartRequest('POST', uri);
+      multipart.headers.addAll(authHeaders);
+      multipart.files.add(await http.MultipartFile.fromPath('imagen', filePath));
+      return _client.send(multipart);
+    }
+
+    var streamed = await runMultipart(headers);
+    var response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 401) {
+      await _authService.refreshToken();
+      headers = await _authService.authorizedHeaders();
+      headers.remove('Content-Type');
+      streamed = await runMultipart(headers);
+      response = await http.Response.fromStream(streamed);
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (kDebugMode) {
+        debugPrint(
+          '[PetsService] HTTP ${response.statusCode} POST /analisis-imagen/ -> ${response.body}',
+        );
+      }
+      throw ClientException(
+        _extractErrorMessage(_safeDecode(response.body)),
+        statusCode: response.statusCode,
+      );
+    }
+
+    final decoded = _safeDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      return PetImageAnalysis.fromJson(decoded);
+    }
+    throw const ClientException('No se recibio el resultado del analisis.');
   }
 
   Future<void> createPet(CreatePetRequest request) async {

@@ -35,7 +35,7 @@ class AdopcionDetailPage extends StatelessWidget {
                     height: 220,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       height: 220,
                       color: Colors.orange.shade50,
                       child: const Icon(
@@ -93,7 +93,7 @@ class AdopcionDetailPage extends StatelessWidget {
               if (adopcion.telefonoContacto.trim().isNotEmpty)
                 OutlinedButton.icon(
                   onPressed: () => openExternalLink(
-                    'https://wa.me/${_sanitizePhone(adopcion.telefonoContacto)}?text=${Uri.encodeComponent('Hola, vi la publicacion de adopcion de ${adopcion.nombre}.')}',
+                    'https://wa.me/${_sanitizePhoneForWhatsApp(adopcion.telefonoContacto)}?text=${Uri.encodeComponent('Hola, vi la publicacion de adopcion de ${adopcion.nombre}.')}',
                   ),
                   icon: const Icon(Icons.chat),
                   label: const Text('WhatsApp'),

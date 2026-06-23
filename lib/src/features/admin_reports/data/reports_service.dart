@@ -22,7 +22,7 @@ class AdminReportsService {
   final Dio _dio;
 
   static const String _n8nBaseUrl =
-      'https://petvet.app.n8n.cloud/webhook/chat';
+      'https://petcore.app.n8n.cloud/webhook/chat';
 
   Future<void> generateReport({
     required String query,
