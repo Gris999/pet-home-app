@@ -12,6 +12,7 @@ import 'package:pethome_app/src/features/pets/data/adopciones_service.dart';
 import 'package:pethome_app/src/features/pets/data/pets_service.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/adopciones_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/mascotas_page.dart';
+import 'package:pethome_app/src/features/pets/presentation/pages/pet_reminders_page.dart';
 import 'package:pethome_app/src/features/profile/data/profile_service.dart';
 import 'package:pethome_app/src/features/profile/presentation/pages/perfil_page.dart';
 import 'package:pethome_app/src/core/services/notification_service.dart';
@@ -63,6 +64,7 @@ class _HomePageState extends State<HomePage> {
 
     _notificationService = NotificationService(
       apiClient: ApiClient(authService: widget.authService),
+      onOpenLink: _openNotificationLink,
     );
     _notificationService.initialize();
 
@@ -73,6 +75,24 @@ class _HomePageState extends State<HomePage> {
       context: session.context,
       componentesRaw: session.componentesRaw,
       permissions: session.permissions,
+    );
+  }
+
+  void _openNotificationLink(String link) {
+    if (!mounted) return;
+
+    final match = RegExp(r'^/mascotas/(\d+)/recordatorios/?$').firstMatch(link);
+    final petId = int.tryParse(match?.group(1) ?? '');
+    if (petId == null) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PetRemindersPage(
+          petId: petId,
+          petName: 'Mascota',
+          petsService: _petsService,
+        ),
+      ),
     );
   }
 
@@ -204,6 +224,7 @@ class _HomePageState extends State<HomePage> {
                 clientService: _petsService,
                 appointmentsService: _appointmentsService,
                 permissions: permissions,
+                catalogoService: _catalogoService,
               ),
               icon: Icons.pets,
               label: 'Mascotas',

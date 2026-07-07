@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pethome_app/src/core/features/compras/presentation/pages/carrito_temporal_page.dart';
 import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/data/catalogo_service.dart';
 import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/models/catalogo_producto.dart';
+import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/presentation/pages/favorite_products_page.dart';
 import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/presentation/pages/product_detail_page.dart';
 import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/widgets/catalogo_widgets.dart';
 
@@ -41,6 +42,8 @@ class _CatalogoPageState extends State<CatalogoPage> {
   bool _soloDestacados = false;
   bool _soloNovedades = false;
   bool _soloPromociones = false;
+  final Map<int, bool> _favoriteOverrides = <int, bool>{};
+  final Set<int> _favoriteUpdating = <int>{};
 
   @override
   void initState() {
@@ -79,6 +82,11 @@ class _CatalogoPageState extends State<CatalogoPage> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Mis favoritos',
+            onPressed: _openFavoritos,
+            icon: const Icon(Icons.favorite_border),
+          ),
           IconButton(
             tooltip: 'Mi carrito',
             onPressed: () {
@@ -223,10 +231,18 @@ class _CatalogoPageState extends State<CatalogoPage> {
                             ),
                         itemBuilder: (context, index) {
                           final product = filtrados[index];
+                          final isFavorite = _isFavorite(product);
                           return CatalogProductCard(
-                            product: product,
+                            product: product.copyWith(esFavorito: isFavorite),
                             compact: true,
-                            onTap: () => _showProductDetail(product),
+                            isFavorite: isFavorite,
+                            onFavoriteToggle:
+                                _favoriteUpdating.contains(product.idProducto)
+                                    ? null
+                                    : () => _toggleFavorite(product),
+                            onTap: () => _showProductDetail(
+                              product.copyWith(esFavorito: isFavorite),
+                            ),
                           );
                         },
                       ),
@@ -304,8 +320,71 @@ class _CatalogoPageState extends State<CatalogoPage> {
 
   void _showProductDetail(CatalogoProducto product) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
+      MaterialPageRoute(
+        builder: (_) => ProductDetailPage(
+          product: product,
+          catalogoService: widget.catalogoService,
+          onFavoriteChanged: (isFavorite) {
+            setState(() {
+              _favoriteOverrides[product.idProducto] = isFavorite;
+            });
+          },
+        ),
+      ),
     );
+  }
+
+  void _openFavoritos() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FavoriteProductsPage(
+          catalogoService: widget.catalogoService,
+        ),
+      ),
+    ).then((_) => _refresh());
+  }
+
+  bool _isFavorite(CatalogoProducto product) {
+    return _favoriteOverrides[product.idProducto] ?? product.esFavorito;
+  }
+
+  Future<void> _toggleFavorite(CatalogoProducto product) async {
+    final current = _isFavorite(product);
+    final next = !current;
+    setState(() {
+      _favoriteOverrides[product.idProducto] = next;
+      _favoriteUpdating.add(product.idProducto);
+    });
+
+    try {
+      if (next) {
+        await widget.catalogoService.addFavorito(product.idProducto);
+      } else {
+        await widget.catalogoService.removeFavorito(product.idProducto);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next
+                ? 'Producto agregado a favoritos.'
+                : 'Producto quitado de favoritos.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _favoriteOverrides[product.idProducto] = current;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo actualizar favoritos: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _favoriteUpdating.remove(product.idProducto));
+      }
+    }
   }
 
   static const Map<String, List<String>> _categoryAliases = {

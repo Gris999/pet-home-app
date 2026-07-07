@@ -6,9 +6,11 @@ class AddProductoCarritoButton extends StatefulWidget {
   const AddProductoCarritoButton({
     super.key,
     required this.productoId,
+    this.enabled = true,
   });
 
   final int productoId;
+  final bool enabled;
 
   @override
   State<AddProductoCarritoButton> createState() => _AddProductoCarritoButtonState();
@@ -47,7 +49,7 @@ class _AddProductoCarritoButtonState extends State<AddProductoCarritoButton> {
   @override
   Widget build(BuildContext context) {
     return FilledButton.icon(
-      onPressed: _isAdding ? null : _onTap,
+      onPressed: _isAdding || !widget.enabled ? null : _onTap,
       icon: _isAdding
           ? const SizedBox(
               width: 16,
@@ -55,7 +57,13 @@ class _AddProductoCarritoButtonState extends State<AddProductoCarritoButton> {
               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
             )
           : const Icon(Icons.add_shopping_cart_rounded),
-      label: Text(_isAdding ? 'Agregando...' : 'Agregar al carrito'),
+      label: Text(
+        _isAdding
+            ? 'Agregando...'
+            : widget.enabled
+                ? 'Agregar al carrito'
+                : 'Sin stock disponible',
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: const Color(0xFFF97316),
         padding: const EdgeInsets.symmetric(vertical: 14),

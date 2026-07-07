@@ -254,7 +254,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _showProductDetail(CatalogoProducto product) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
+      MaterialPageRoute(
+        builder: (_) => ProductDetailPage(
+          product: product,
+          catalogoService: widget.catalogoService,
+        ),
+      ),
     );
   }
 

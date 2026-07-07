@@ -5,7 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/pets/models/clinical_history.dart';
+import 'package:pethome_app/src/features/pets/models/pet_digital_card.dart';
+import 'package:pethome_app/src/features/pets/models/pet_evolution.dart';
 import 'package:pethome_app/src/features/pets/models/pet_image_analysis.dart';
+import 'package:pethome_app/src/features/pets/models/pet_reminder.dart';
 
 class PetsService {
   PetsService({
@@ -179,6 +182,109 @@ class PetsService {
         .whereType<Map<String, dynamic>>()
         .map(PreventivePlanItem.fromJson)
         .toList();
+  }
+
+  Future<PetDigitalCard> getPetDigitalCard(int petId) async {
+    final response = await _catalogGet('/api/gestion/clientes/mascotas/$petId/carnet-digital/');
+    final decoded = _extractJsonMapOrThrow(response);
+    return PetDigitalCard.fromJson(decoded);
+  }
+
+  Future<List<PetReminder>> getPetReminders(int petId) async {
+    final data = await _apiClient.getList(
+      '/api/gestion/clientes/mascotas/$petId/recordatorios/',
+    );
+    return data.map(PetReminder.fromJson).toList();
+  }
+
+  Future<PetReminder> createPetReminder({
+    required int petId,
+    required PetReminderRequest request,
+  }) async {
+    final response = await _apiClient.send(
+      method: 'POST',
+      path: '/api/gestion/clientes/mascotas/$petId/recordatorios/',
+      body: request.toJson(),
+    );
+    final decoded = _apiClient.decode(response);
+    final json = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    return PetReminder.fromJson(json);
+  }
+
+  Future<PetReminder> updatePetReminder({
+    required int reminderId,
+    required PetReminderRequest request,
+  }) async {
+    final response = await _apiClient.send(
+      method: 'PATCH',
+      path: '/api/gestion/clientes/recordatorios/$reminderId/',
+      body: request.toJson(),
+    );
+    final decoded = _apiClient.decode(response);
+    final json = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    return PetReminder.fromJson(json);
+  }
+
+  Future<PetReminder> completePetReminder(int reminderId) async {
+    final response = await _apiClient.send(
+      method: 'POST',
+      path: '/api/gestion/clientes/recordatorios/$reminderId/completar/',
+    );
+    final decoded = _apiClient.decode(response);
+    final json = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    return PetReminder.fromJson(json);
+  }
+
+  Future<PetReminder> cancelPetReminder(int reminderId) async {
+    final response = await _apiClient.send(
+      method: 'POST',
+      path: '/api/gestion/clientes/recordatorios/$reminderId/cancelar/',
+    );
+    final decoded = _apiClient.decode(response);
+    final json = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    return PetReminder.fromJson(json);
+  }
+
+  Future<List<PetEvolutionRecord>> getPetEvolution(int petId) async {
+    final data = await _apiClient.getList(
+      '/api/gestion/clientes/mascotas/$petId/evolucion/',
+    );
+    return data.map(PetEvolutionRecord.fromJson).toList();
+  }
+
+  Future<PetEvolutionRecord> createPetEvolution({
+    required int petId,
+    required PetEvolutionRequest request,
+  }) async {
+    final response = await _apiClient.send(
+      method: 'POST',
+      path: '/api/gestion/clientes/mascotas/$petId/evolucion/',
+      body: request.toJson(),
+    );
+    final decoded = _apiClient.decode(response);
+    final json = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    return PetEvolutionRecord.fromJson(json);
+  }
+
+  Future<PetEvolutionRecord> updatePetEvolution({
+    required int recordId,
+    required PetEvolutionRequest request,
+  }) async {
+    final response = await _apiClient.send(
+      method: 'PATCH',
+      path: '/api/gestion/clientes/evolucion/$recordId/',
+      body: request.toJson(),
+    );
+    final decoded = _apiClient.decode(response);
+    final json = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    return PetEvolutionRecord.fromJson(json);
+  }
+
+  Future<void> deletePetEvolution(int recordId) async {
+    await _apiClient.send(
+      method: 'DELETE',
+      path: '/api/gestion/clientes/evolucion/$recordId/',
+    );
   }
 
   Future<List<PetImageAnalysis>> getPetImageAnalyses(int petId) async {

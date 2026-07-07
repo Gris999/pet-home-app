@@ -57,6 +57,16 @@ class TrackingService {
     return PedidoDetail.fromJson(row);
   }
 
+  Future<PedidoRecompraResult> recomprarPedido(int idPedido) async {
+    final response = await _apiClient.send(
+      method: 'POST',
+      path: '/api/gestion/notificaciones/pedidos/$idPedido/recomprar/',
+    );
+    final decoded = _apiClient.decode(response);
+    final row = _asMap(decoded);
+    return PedidoRecompraResult.fromJson(row);
+  }
+
   String _withQuery(String path, Map<String, String> queryParams) {
     if (queryParams.isEmpty) return path;
     final query = Uri(queryParameters: queryParams).query;

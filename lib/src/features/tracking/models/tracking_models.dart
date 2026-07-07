@@ -331,6 +331,52 @@ class PedidoSeguimientoItem {
   }
 }
 
+class PedidoRecompraResult {
+  const PedidoRecompraResult({
+    required this.agregados,
+    required this.noDisponibles,
+  });
+
+  final List<PedidoRecompraItem> agregados;
+  final List<PedidoRecompraItem> noDisponibles;
+
+  bool get hasAgregados => agregados.isNotEmpty;
+
+  factory PedidoRecompraResult.fromJson(Map<String, dynamic> json) {
+    return PedidoRecompraResult(
+      agregados: _asListOfMap(json['agregados'])
+          .map(PedidoRecompraItem.fromJson)
+          .toList(),
+      noDisponibles: _asListOfMap(json['no_disponibles'])
+          .map(PedidoRecompraItem.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class PedidoRecompraItem {
+  const PedidoRecompraItem({
+    required this.productoId,
+    required this.nombre,
+    this.cantidad,
+    this.motivo,
+  });
+
+  final int productoId;
+  final String nombre;
+  final String? cantidad;
+  final Object? motivo;
+
+  factory PedidoRecompraItem.fromJson(Map<String, dynamic> json) {
+    return PedidoRecompraItem(
+      productoId: _asInt(json['id_producto']),
+      nombre: _asString(json['nombre'], fallback: 'Producto'),
+      cantidad: _asNullableString(json['cantidad']),
+      motivo: json['motivo'],
+    );
+  }
+}
+
 int _asInt(dynamic value) {
   if (value is int) return value;
   if (value is num) return value.toInt();

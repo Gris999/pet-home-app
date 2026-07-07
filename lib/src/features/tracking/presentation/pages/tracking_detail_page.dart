@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:pethome_app/src/core/features/compras/presentation/pages/carrito_temporal_page.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/features/auth/data/auth_service.dart';
 import 'package:pethome_app/src/features/auth/presentation/pages/login_page.dart';
@@ -48,6 +49,7 @@ class _TrackingDetailPageState extends State<TrackingDetailPage> {
   int? _errorCode;
   SeguimientoItem? _seguimiento;
   PedidoDetail? _pedido;
+  bool _isReordering = false;
 
   @override
   void initState() {
@@ -247,6 +249,35 @@ class _TrackingDetailPageState extends State<TrackingDetailPage> {
         const SizedBox(height: 8),
         _PublicTimeline(items: publicHistory),
         const SizedBox(height: 18),
+        if (detail.detalles.isNotEmpty) ...[
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _isReordering ? null : () => _recomprarPedido(detail),
+              icon: _isReordering
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.shopping_cart_checkout_rounded),
+              label: Text(_isReordering ? 'Agregando...' : 'Volver a comprar'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _purple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -392,6 +423,63 @@ class _TrackingDetailPageState extends State<TrackingDetailPage> {
       MaterialPageRoute(builder: (_) => LoginPage(authService: widget.authService)),
       (route) => false,
     );
+  }
+
+  Future<void> _recomprarPedido(PedidoDetail detail) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Volver a comprar'),
+        content: Text(
+          'Se agregaran al carrito los productos disponibles del pedido #${detail.idPedido}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Agregar'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || confirmed != true) return;
+
+    setState(() => _isReordering = true);
+    try {
+      final result = await _trackingService.recomprarPedido(detail.idPedido);
+      if (!mounted) return;
+
+      final message = result.noDisponibles.isEmpty
+          ? '${result.agregados.length} productos agregados al carrito.'
+          : '${result.agregados.length} agregados, ${result.noDisponibles.length} no disponibles.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+
+      if (result.hasAgregados) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CarritoTemporalPage()),
+        );
+      }
+    } on ClientException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo recomprar el pedido: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isReordering = false);
+      }
+    }
   }
 
   String _seguimientoTitle(SeguimientoItem item) {

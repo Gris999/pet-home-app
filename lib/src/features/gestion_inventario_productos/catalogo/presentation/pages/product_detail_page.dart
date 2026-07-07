@@ -1,16 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:pethome_app/src/core/features/compras/presentation/pages/carrito_temporal_page.dart';
 import 'package:pethome_app/src/core/features/compras/presentation/widgets/add_producto_carrito_button.dart';
+import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/data/catalogo_service.dart';
 import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/models/catalogo_producto.dart';
 import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/widgets/catalogo_widgets.dart';
 
-class ProductDetailPage extends StatelessWidget {
-  const ProductDetailPage({super.key, required this.product});
+class ProductDetailPage extends StatefulWidget {
+  const ProductDetailPage({
+    super.key,
+    required this.product,
+    this.catalogoService,
+    this.onFavoriteChanged,
+  });
 
   final CatalogoProducto product;
+  final CatalogoService? catalogoService;
+  final ValueChanged<bool>? onFavoriteChanged;
+
+  @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  late bool _isFavorite = widget.product.esFavorito;
+  bool _isUpdatingFavorite = false;
+
+  Future<void> _toggleFavorite() async {
+    final service = widget.catalogoService;
+    if (service == null || _isUpdatingFavorite) return;
+
+    final next = !_isFavorite;
+    setState(() {
+      _isFavorite = next;
+      _isUpdatingFavorite = true;
+    });
+
+    try {
+      if (next) {
+        await service.addFavorito(widget.product.idProducto);
+      } else {
+        await service.removeFavorito(widget.product.idProducto);
+      }
+      widget.onFavoriteChanged?.call(next);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next
+                ? 'Producto agregado a favoritos.'
+                : 'Producto quitado de favoritos.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isFavorite = !next);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo actualizar favoritos: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingFavorite = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final product = widget.product.copyWith(esFavorito: _isFavorite);
     final hasPromocion = product.tienePromocionActiva;
     final hasNovedad = product.esNovedadActiva;
     final availabilityLabel = product.visibleCatalogo && product.estado
@@ -28,6 +85,25 @@ class ProductDetailPage extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
+          if (widget.catalogoService != null)
+            IconButton(
+              tooltip: _isFavorite
+                  ? 'Quitar de favoritos'
+                  : 'Agregar a favoritos',
+              onPressed: _isUpdatingFavorite ? null : _toggleFavorite,
+              icon: _isUpdatingFavorite
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      _isFavorite ? Icons.favorite : Icons.favorite_border,
+                    ),
+            ),
           IconButton(
             tooltip: 'Mi carrito',
             onPressed: () {
@@ -210,7 +286,10 @@ class ProductDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            AddProductoCarritoButton(productoId: product.idProducto),
+            AddProductoCarritoButton(
+              productoId: product.idProducto,
+              enabled: product.tieneStock,
+            ),
           ],
         ),
       ),

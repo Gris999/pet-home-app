@@ -7,6 +7,7 @@ import 'package:pethome_app/src/features/appointments/data/appointments_service.
 import 'package:pethome_app/src/features/appointments/presentation/pages/citas_page.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
 import 'package:pethome_app/src/features/auth/domain/auth_user.dart';
+import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/data/catalogo_service.dart';
 import 'package:pethome_app/src/features/pets/data/pets_service.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/clinical_history_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_profile_page.dart';
@@ -17,11 +18,13 @@ class MascotasPage extends StatefulWidget {
     required this.clientService,
     required this.appointmentsService,
     required this.permissions,
+    this.catalogoService,
   });
 
   final PetsService clientService;
   final AppointmentsService appointmentsService;
   final PermissionsHelper permissions;
+  final CatalogoService? catalogoService;
 
   @override
   State<MascotasPage> createState() => _MascotasPageState();
@@ -495,6 +498,7 @@ class _MascotasPageState extends State<MascotasPage> {
         builder: (_) => PetProfilePage(
           pet: pet,
           petsService: widget.clientService,
+          catalogoService: widget.catalogoService,
           onScheduleAppointment: () {
             Navigator.of(context).push(
               MaterialPageRoute(

@@ -5,9 +5,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
 
 class NotificationService {
-  NotificationService({required ApiClient apiClient}) : _apiClient = apiClient;
+  NotificationService({
+    required ApiClient apiClient,
+    ValueChanged<String>? onOpenLink,
+  })  : _apiClient = apiClient,
+        _onOpenLink = onOpenLink;
 
   final ApiClient _apiClient;
+  final ValueChanged<String>? _onOpenLink;
   FirebaseMessaging? _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
@@ -115,7 +120,10 @@ class NotificationService {
     await _localNotifications.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Manejar click
+        final link = response.payload;
+        if (link != null && link.isNotEmpty) {
+          _onOpenLink?.call(link);
+        }
       },
     );
 
@@ -123,6 +131,11 @@ class NotificationService {
     await _localNotifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_channel);
+  }
+
+  void _openMessageLink(RemoteMessage message) {
+    final link = message.data['link']?.toString();
+    if (link != null && link.isNotEmpty) _onOpenLink?.call(link);
   }
 
   void _configureListeners() {
@@ -157,6 +170,11 @@ class NotificationService {
     });
 
     // Background: Cuando el usuario toca la notificación
+    FirebaseMessaging.onMessageOpenedApp.listen(_openMessageLink);
+    _safeMessaging?.getInitialMessage().then((message) {
+      if (message != null) _openMessageLink(message);
+    });
+
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       if (kDebugMode) {
         print('App abierta desde notificación: ${message.data}');

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:pethome_app/src/core/network/api_client.dart';
+import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/data/catalogo_service.dart';
+import 'package:pethome_app/src/features/gestion_inventario_productos/catalogo/presentation/pages/pet_product_recommendations_page.dart';
 import 'package:pethome_app/src/features/pets/data/pets_service.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/clinical_history_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_addresses_page.dart';
+import 'package:pethome_app/src/features/pets/presentation/pages/pet_digital_card_page.dart';
+import 'package:pethome_app/src/features/pets/presentation/pages/pet_evolution_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_history_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_image_analysis_page.dart';
 import 'package:pethome_app/src/features/pets/presentation/pages/pet_preventive_plan_page.dart';
+import 'package:pethome_app/src/features/pets/presentation/pages/pet_reminders_page.dart';
 
 class PetProfilePage extends StatefulWidget {
   const PetProfilePage({
@@ -13,12 +18,14 @@ class PetProfilePage extends StatefulWidget {
     required this.pet,
     required this.petsService,
     required this.onUseAddressInAppointment,
+    this.catalogoService,
     this.onScheduleAppointment,
   });
 
   final Pet pet;
   final PetsService petsService;
   final ValueChanged<String> onUseAddressInAppointment;
+  final CatalogoService? catalogoService;
   final VoidCallback? onScheduleAppointment;
 
   @override
@@ -185,6 +192,75 @@ class _PetProfilePageState extends State<PetProfilePage> {
                   );
                 },
               ),
+              const SizedBox(height: 12),
+              _AccessCard(
+                title: 'Carnet digital',
+                countLabel: 'Identificacion y salud resumida',
+                color: const Color(0xFF059669),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PetDigitalCardPage(
+                        petId: pet.id,
+                        petsService: widget.petsService,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _AccessCard(
+                title: 'Recordatorios',
+                countLabel: 'Vacunas, controles y cuidados',
+                color: const Color(0xFF0EA5E9),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PetRemindersPage(
+                        petId: pet.id,
+                        petName: pet.name,
+                        petsService: widget.petsService,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _AccessCard(
+                title: 'Peso y evolucion',
+                countLabel: 'Historial de peso y condicion',
+                color: const Color(0xFF2563EB),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PetEvolutionPage(
+                        petId: pet.id,
+                        petName: pet.name,
+                        petsService: widget.petsService,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              if (widget.catalogoService != null) ...[
+                const SizedBox(height: 12),
+                _AccessCard(
+                  title: 'Productos recomendados',
+                  countLabel: 'Segun los datos de ${pet.name}',
+                  color: const Color(0xFFF97316),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => PetProductRecommendationsPage(
+                          petId: pet.id,
+                          petName: pet.name,
+                          catalogoService: widget.catalogoService!,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ],
           );
         },

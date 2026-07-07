@@ -27,6 +27,9 @@ class CatalogoProducto {
     this.precioPromocional,
     this.promocionFechaInicio,
     this.promocionFechaFin,
+    this.esFavorito = false,
+    this.stockDisponible = 0,
+    this.tieneStock = false,
   });
 
   final int idProducto;
@@ -50,6 +53,42 @@ class CatalogoProducto {
   final double? precioPromocional;
   final DateTime? promocionFechaInicio;
   final DateTime? promocionFechaFin;
+  final bool esFavorito;
+  final double stockDisponible;
+  final bool tieneStock;
+
+  CatalogoProducto copyWith({
+    bool? esFavorito,
+    double? stockDisponible,
+    bool? tieneStock,
+  }) {
+    return CatalogoProducto(
+      idProducto: idProducto,
+      nombre: nombre,
+      descripcion: descripcion,
+      precioVenta: precioVenta,
+      precioCompra: precioCompra,
+      imagen: imagen,
+      visibleCatalogo: visibleCatalogo,
+      estado: estado,
+      categoria: categoria,
+      proveedor: proveedor,
+      tipoMascota: tipoMascota,
+      destacado: destacado,
+      novedadDesde: novedadDesde,
+      novedadHasta: novedadHasta,
+      promocionActiva: promocionActiva,
+      tipoDescuento: tipoDescuento,
+      porcentajeDescuento: porcentajeDescuento,
+      montoDescuento: montoDescuento,
+      precioPromocional: precioPromocional,
+      promocionFechaInicio: promocionFechaInicio,
+      promocionFechaFin: promocionFechaFin,
+      esFavorito: esFavorito ?? this.esFavorito,
+      stockDisponible: stockDisponible ?? this.stockDisponible,
+      tieneStock: tieneStock ?? this.tieneStock,
+    );
+  }
 
   bool get esNovedadActiva {
     if (novedadDesde == null && novedadHasta == null) return false;
@@ -191,6 +230,11 @@ class CatalogoProducto {
       promocionFechaFin: _parseDate(
         json['promocion_fecha_fin'] ?? json['promocionFechaFin'],
       ),
+      esFavorito: _asBool(json['es_favorito'] ?? json['esFavorito']),
+      stockDisponible: _asDouble(
+        json['stock_disponible'] ?? json['stockDisponible'],
+      ),
+      tieneStock: _asBool(json['tiene_stock'] ?? json['tieneStock']),
     );
   }
 }

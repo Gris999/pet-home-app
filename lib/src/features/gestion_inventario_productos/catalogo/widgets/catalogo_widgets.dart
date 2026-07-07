@@ -333,11 +333,15 @@ class CatalogProductCard extends StatelessWidget {
     required this.product,
     required this.onTap,
     this.compact = false,
+    this.isFavorite,
+    this.onFavoriteToggle,
   });
 
   final CatalogoProducto product;
   final VoidCallback onTap;
   final bool compact;
+  final bool? isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -367,7 +371,38 @@ class CatalogProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ProductImageBox(product: product, height: compact ? 124 : 118),
+              Stack(
+                children: [
+                  ProductImageBox(product: product, height: compact ? 124 : 118),
+                  if (onFavoriteToggle != null)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Material(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        shape: const CircleBorder(),
+                        child: IconButton(
+                          tooltip: (isFavorite ?? product.esFavorito)
+                              ? 'Quitar de favoritos'
+                              : 'Agregar a favoritos',
+                          constraints: const BoxConstraints(
+                            minWidth: 38,
+                            minHeight: 38,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: onFavoriteToggle,
+                          icon: Icon(
+                            (isFavorite ?? product.esFavorito)
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: petOrange,
+                            size: 21,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 10),
               Text(
                 product.nombre,
